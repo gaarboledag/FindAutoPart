@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+enum Role {
+  TALLER  // Workshop
+  TIENDA  // Store
+  ADMIN   // Administrator
+}
+
+enum CotizacionStatus {
+  ABIERTA   // Open for offers
+  CERRADA   // Closed
+  CANCELADA // Cancelled
+}
+
+enum PedidoStatus {
+  PENDIENTE    // Pending
+  CONFIRMADO   // Confirmed by store
+  ENTREGADO    // Delivered
+  CANCELADO    // Cancelled
+}
+
+// ========================================
+// USER & AUTHENTICATION
+// ========================================
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  password  String
+  role      Role
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  taller    Taller?
+  tienda    Tienda?
+  
+  @@map("users")
+}
+
+// ========================================
+// TALLERES (WORKSHOPS)
+// ========================================
+
+model Taller {
+  id         String  @id @default(uuid()) @db.Uuid
+  userId     String  @unique @db.Uuid
+  
+  nombre     String
+  rut        String  @unique
+  telefono   String
+  direccion  String
+  ciudad     String
+  region     String
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relationships
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cotizaciones  Cotizacion[]
+  pedidos       Pedido[]
+  
+  @@map("talleres")
+}
+
+// ========================================
+// TIENDAS (STORES)
+// ========================================
+
+model Tienda {
+  id         String  @id @default(uuid()) @db.Uuid
+  userId     String  @unique @db.Uuid
+  
+  nombre     String
+  rut        String  @unique
+  telefono   String
+  direccion  String
+  ciudad     String
+  region     String
+  
+  // Coverage area (regions where they deliver)
+  cobertura  String[] // Array of region names
+  
+  // Categories of spare parts offered
+  categorias String[] // Array of category names (e.g., "Frenos", "Motor", etc.)
+
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relationships
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repuestos     Repuesto[]
+  ofertas       Oferta[]
+  pedidos       Pedido[]
+  
+  @@map("tiendas")
+}
+
+// ========================================
+// REPUESTOS (PARTS)
+// ========================================
+
+model Repuesto {
+  id               String   @id @default(uuid()) @db.Uuid
+  tiendaId         String   @db.Uuid
+  
+  codigo           String
+  nombre           String
+  descripcion      String?
+  marca            String
+  modelo           String?
+  
+  // Pricing and stock
+  precioBase       Float
+  stock            Int      @default(0)
+  
+  // Search and categorization
+  categorias       String[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  tienda           Tienda             @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  cotizacionItems  CotizacionItem[]
+  ofertaItems      OfertaItem[]
+  
+  @@unique([tiendaId, codigo])
+  @@map("repuestos")
+}
+
+// ========================================
+// COTIZACIONES (QUOTATIONS)
+// ========================================
+
+model Cotizacion {
+  id          String            @id @default(uuid()) @db.Uuid
+  tallerId    String            @db.Uuid
+  
+  titulo      String
+  descripcion String?
+  status      CotizacionStatus  @default(ABIERTA)
+  
+  // Category for filtering (e.g., "Frenos", "Motor", etc.)
+  categoria   String            @default("General")
+  
+  // Vehicle info
+  marca       String
+  modelo      String
+  anio        Int
+  patente     String?
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  closedAt    DateTime?
+
+  // Relationships
+  taller      Taller            @relation(fields: [tallerId], references: [id], onDelete: Cascade)
+  items       CotizacionItem[]
+  ofertas     Oferta[]
+  pedido      Pedido?
+  
+  @@map("cotizaciones")
+}
+
+model CotizacionItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  cotizacionId  String   @db.Uuid
+  repuestoId    String?  @db.Uuid // Optional - might not have specific part yet
+  
+  codigo        String?
+  nombre        String
+  descripcion   String?
+  marca         String?
+  cantidad      Int      @default(1)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  cotizacion    Cotizacion    @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  repuesto      Repuesto?     @relation(fields: [repuestoId], references: [id], onDelete: SetNull)
+  
+  @@map("cotizacion_items")
+}
+
+// ========================================
+// OFERTAS (OFFERS)
+// ========================================
+
+model Oferta {
+  id              String     @id @default(uuid()) @db.Uuid
+  cotizacionId    String     @db.Uuid
+  tiendaId        String     @db.Uuid
+  
+  // Delivery info
+  diasEntrega     Int        // Days to deliver
+  comentarios     String?
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relationships
+  cotizacion      Cotizacion    @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  tienda          Tienda        @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  items           OfertaItem[]
+  pedido          Pedido?
+  
+  @@unique([cotizacionId, tiendaId]) // One offer per store per quotation
+  @@map("ofertas")
+}
+
+model OfertaItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  ofertaId        String   @db.Uuid
+  repuestoId      String?  @db.Uuid
+  
+  nombre          String
+  marca           String?
+  cantidad        Int
+  precioUnitario  Float
+  disponible      Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  oferta          Oferta      @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  repuesto        Repuesto?   @relation(fields: [repuestoId], references: [id], onDelete: SetNull)
+  
+  @@map("oferta_items")
+}
+
+// ========================================
+// PEDIDOS (ORDERS)
+// ========================================
+
+model Pedido {
+  id              String        @id @default(uuid()) @db.Uuid
+  cotizacionId    String        @unique @db.Uuid
+  ofertaId        String        @unique @db.Uuid
+  tallerId        String        @db.Uuid
+  tiendaId        String        @db.Uuid
+  
+  status          PedidoStatus  @default(PENDIENTE)
+  total           Float
+  
+  // Delivery info
+  direccionEntrega String
+  fechaEstimada   DateTime?
+  fechaEntregado  DateTime?
+  
+  notas           String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relationships
+  cotizacion      Cotizacion    @relation(fields: [cotizacionId], references: [id])
+  oferta          Oferta        @relation(fields: [ofertaId], references: [id])
+  taller          Taller        @relation(fields: [tallerId], references: [id])
+  tienda          Tienda        @relation(fields: [tiendaId], references: [id])
+  
+  @@map("pedidos")
+}
+
+// ========================================
+// NOTIFICATIONS
+// ========================================
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  
+  tipo        String   // Type: NEW_QUOTATION, NEW_OFFER, SELECTED_OFFER, etc.
+  titulo      String
+  mensaje     String
+  
+  // Target
+  recipientEmail String
+  isRead      Boolean  @default(false)
+  sentAt      DateTime?
+  
+  // Related entity
+  entityType  String?  // cotizacion, oferta, pedido
+  entityId    String?  @db.Uuid
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("notifications")
+}

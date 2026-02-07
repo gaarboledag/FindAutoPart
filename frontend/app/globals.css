@@ -1,0 +1,61 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 215 70% 14%;
+    /* Deep Blue #0B1F3B */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 194 100% 50%;
+    /* Electric Cyan #00C2FF */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 142 71% 45%;
+    /* Success Green #16A34A */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom Utilities for Glow Effects */
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md bg-white/10 border border-white/10;
+  }
+
+  .glow-text {
+    @apply drop-shadow-[0_0_10px_rgba(0, 194, 255, 0.5)];
+  }
+}
