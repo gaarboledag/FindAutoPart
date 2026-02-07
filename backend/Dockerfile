@@ -1,9 +1,6 @@
 # Development Dockerfile for Backend
 
-FROM node:18-alpine
-
-# Install OpenSSL for Prisma compatibility
-RUN apk add --no-cache openssl1.1-compat
+FROM node:18-slim
 
 WORKDIR /app
 
