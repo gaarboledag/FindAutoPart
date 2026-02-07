@@ -15,9 +15,14 @@ async function bootstrap() {
         }),
     );
 
-    // CORS - Temporary: allow all origins
+    // CORS - Allow custom domain and production frontend
     app.enableCors({
-        origin: true, // Allow all origins temporarily
+        origin: [
+            'http://localhost:3000',
+            'https://findpart-frontend.0wq0kx.easypanel.host',
+            'https://findpart.iacol.online',
+            process.env.FRONTEND_URL,
+        ].filter(Boolean),
         credentials: true,
     });
 
