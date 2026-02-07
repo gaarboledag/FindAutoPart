@@ -2,16 +2,16 @@ import { Sidebar } from "@/components/Sidebar"
 import { MobileSidebar } from "@/components/MobileSidebar"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
-export default function TiendaLayout({
+export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
     return (
-        <ProtectedRoute allowedRoles={["TIENDA"]}>
+        <ProtectedRoute allowedRoles={["ADMIN"]}>
             <div className="flex h-screen overflow-hidden bg-background flex-col md:flex-row">
-                <MobileSidebar role="TIENDA" />
-                <Sidebar role="TIENDA" />
+                <MobileSidebar role="ADMIN" />
+                <Sidebar role="ADMIN" />
                 <main className="flex-1 overflow-y-auto bg-background/50 p-4 md:p-8">
                     {children}
                 </main>

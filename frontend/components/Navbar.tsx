@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 // Removed './Navbar.css' import as we are moving to Tailwind
+import Image from "next/image"
 
 interface NavbarProps {
     role?: "TALLER" | "TIENDA" | "ADMIN" // Make role optional for public pages
@@ -14,9 +15,8 @@ export default function Navbar({ role }: NavbarProps) {
     const pathname = usePathname()
     const isPublic = !role
 
-    if (!isPublic) {
-        // Dashboard uses Sidebar, so we might only need a top bar for mobile or user profile
-        // For now, let's keep it simple or return null if we fully switch to Sidebar layout
+    if (role === 'TALLER' || role === 'TIENDA') {
+        // Taller and Tienda use Sidebar layout
         return null
     }
 
@@ -29,8 +29,16 @@ export default function Navbar({ role }: NavbarProps) {
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur-md">
             <div className="container flex h-16 items-center justify-between">
-                <Link href="/" className="flex items-center gap-2">
-                    <span className="text-xl font-bold font-heading text-primary-light">FindPart</span>
+                <Link href={role === 'ADMIN' ? '/admin' : '/'} className="flex items-center gap-2">
+                    <div className="relative w-32 h-8">
+                        <Image
+                            src="/logo_blanco.png"
+                            alt="FindPart Logo"
+                            fill
+                            className="object-contain object-left"
+                            priority
+                        />
+                    </div>
                 </Link>
 
                 <div className="hidden md:flex items-center gap-6">

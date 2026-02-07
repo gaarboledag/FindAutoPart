@@ -70,4 +70,4 @@ This directory contains everything needed to deploy FindAutoPart to production u
 For issues, check:
 - EasyPanel logs for deployment errors
 - Backend health: `https://api.yourdomain.com/health`
-- Frontend accessibility: `https://yourdomain.com`
+- Frontend accessibility: `https://yourdomain.com` 

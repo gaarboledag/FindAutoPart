@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
 import './auth.css'
 
@@ -123,6 +124,18 @@ export default function LoginPage() {
                     <Link href="/" className="link-secondary">
                         Volver al inicio
                     </Link>
+                </div>
+
+                <div className="flex flex-col items-center justify-center mt-8 opacity-70 hover:opacity-100 transition-opacity">
+                    <p className="text-xs text-secondary/60 mb-2 font-medium">Software desarrollado por</p>
+                    <div className="relative w-24 h-12">
+                        <Image
+                            src="/LOGO_IACOL.png"
+                            alt="IACol Dev"
+                            fill
+                            className="object-contain"
+                        />
+                    </div>
                 </div>
             </div>
         </div>

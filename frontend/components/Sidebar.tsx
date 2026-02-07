@@ -14,12 +14,13 @@ import {
     LogOut,
     Package
 } from "lucide-react"
+import Image from "next/image"
 
 interface SidebarProps {
     role: "TALLER" | "TIENDA" | "ADMIN"
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
     const pathname = usePathname()
 
     const links = {
@@ -46,12 +47,22 @@ export function Sidebar({ role }: SidebarProps) {
     const currentLinks = links[role] || []
 
     return (
-        <div className="flex flex-col h-full w-64 bg-card border-r border-border/50">
+        <div className="flex flex-col h-full w-full bg-card">
             <div className="p-6">
-                <h1 className="text-2xl font-bold font-heading text-primary-light tracking-tight">
-                    FindPart
-                </h1>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="flex items-center gap-2 mb-2">
+                    <Link href={role === "ADMIN" ? "/admin" : role === "TALLER" ? "/taller" : "/tienda"} onClick={onNavigate}>
+                        <div className="relative w-40 h-10">
+                            <Image
+                                src="/logo_blanco.png"
+                                alt="FindPart Logo"
+                                fill
+                                className="object-contain object-left"
+                                priority
+                            />
+                        </div>
+                    </Link>
+                </div>
+                <p className="text-xs text-muted-foreground">
                     {role === "TALLER" ? "Taller Automotriz" : role === "TIENDA" ? "Tienda de Repuestos" : "Administrador"}
                 </p>
             </div>
@@ -65,6 +76,7 @@ export function Sidebar({ role }: SidebarProps) {
                         <Link
                             key={link.href}
                             href={link.href}
+                            onClick={onNavigate}
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
                                 isActive
@@ -91,6 +103,14 @@ export function Sidebar({ role }: SidebarProps) {
                     Cerrar Sesión
                 </button>
             </div>
+        </div>
+    )
+}
+
+export function Sidebar({ role }: SidebarProps) {
+    return (
+        <div className="hidden md:flex flex-col h-full w-64 border-r border-border/50 sticky top-0">
+            <SidebarContent role={role} />
         </div>
     )
 }
