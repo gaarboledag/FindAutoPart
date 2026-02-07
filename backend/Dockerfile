@@ -2,6 +2,9 @@
 
 FROM node:18-slim
 
+# Install procps for NestJS watch mode (provides 'ps' command)
+RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Install dependencies
