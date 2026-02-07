@@ -10,6 +10,7 @@ import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
 import { OfertasModule } from './ofertas/ofertas.module';
 import { PedidosModule } from './pedidos/pedidos.module';
 import { AdminModule } from './admin/admin.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
     imports: [
@@ -39,6 +40,7 @@ import { AdminModule } from './admin/admin.module';
         OfertasModule,
         PedidosModule,
         AdminModule,
+        HealthModule,
     ],
     controllers: [],
     providers: [],
