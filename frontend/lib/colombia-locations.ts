@@ -43,7 +43,7 @@ export const getDepartamentos = (): Departamento[] => {
 };
 
 // Helper para obtener ciudades de un departamento
-export const getCiudades = (departamento: Departamento): string[] => {
+export const getCiudades = (departamento: Departamento): readonly string[] => {
     return COLOMBIA_LOCATIONS[departamento] || [];
 };
 
