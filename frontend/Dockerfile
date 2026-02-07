@@ -19,5 +19,5 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-# Iniciar Next.js en modo producción
-CMD ["npm", "start"]
+# Start Next.js server (standalone mode)
+CMD ["node", "server.js"]
