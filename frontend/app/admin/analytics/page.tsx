@@ -294,7 +294,7 @@ export default function AnalyticsPage() {
                                             border: '1px solid #333',
                                             borderRadius: '8px',
                                         }}
-                                        formatter={(value: number) => formatCurrency(value)}
+                                        formatter={(value: number | undefined) => value ? formatCurrency(value) : '$0'}
                                     />
                                     <Area
                                         type="monotone"
