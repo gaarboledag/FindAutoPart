@@ -294,6 +294,7 @@ export default function AnalyticsPage() {
                                             border: '1px solid #333',
                                             borderRadius: '8px',
                                         }}
+                                        // Fix TypeScript: allow undefined values
                                         formatter={(value: number | undefined) => value ? formatCurrency(value) : '$0'}
                                     />
                                     <Area
