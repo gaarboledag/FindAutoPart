@@ -50,5 +50,5 @@ export const getCiudades = (departamento: Departamento): readonly string[] => {
 // Helper para verificar si una combinación departamento-ciudad es válida
 export const isValidLocation = (departamento: string, ciudad: string): boolean => {
     const ciudades = COLOMBIA_LOCATIONS[departamento as Departamento];
-    return ciudades ? ciudades.includes(ciudad as any) : false;
+    return ciudades ? (ciudades as readonly string[]).includes(ciudad) : false;
 };
