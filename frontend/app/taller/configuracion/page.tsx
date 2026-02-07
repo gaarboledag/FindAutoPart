@@ -19,7 +19,7 @@ export default function TallerConfiguracionPage() {
         ciudad: '',
         region: '', // This will store the departamento
     })
-    const [availableCities, setAvailableCities] = useState<string[]>([])
+    const [availableCities, setAvailableCities] = useState<readonly string[]>([])
 
     useEffect(() => {
         loadProfile()

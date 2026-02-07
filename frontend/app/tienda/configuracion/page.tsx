@@ -25,7 +25,7 @@ export default function TiendaConfiguracionPage() {
         cobertura: [] as string[], // This will store departamentos
         categorias: [] as string[],
     })
-    const [availableCities, setAvailableCities] = useState<string[]>([])
+    const [availableCities, setAvailableCities] = useState<readonly string[]>([])
 
     useEffect(() => {
         loadProfile()
