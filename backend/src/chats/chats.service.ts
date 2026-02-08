@@ -11,37 +11,48 @@ export class ChatsService {
     ) { }
 
     async initChat(cotizacionId: string, tiendaId: string) {
-        // Check if chat exists
-        let chat = await this.prisma.chat.findUnique({
-            where: {
-                cotizacionId_tiendaId: {
-                    cotizacionId,
-                    tiendaId
-                }
-            }
-        });
-
-        if (!chat) {
-            // Get Taller ID from Cotizacion
-            const cotizacion = await this.prisma.cotizacion.findUnique({
-                where: { id: cotizacionId },
-                select: { tallerId: true }
-            });
-
-            if (!cotizacion) {
-                throw new Error('Quotation not found');
-            }
-
-            chat = await this.prisma.chat.create({
-                data: {
-                    cotizacionId,
-                    tiendaId,
-                    tallerId: cotizacion.tallerId
+        try {
+            console.log(`Initializing chat for cotizacion ${cotizacionId} and tienda ${tiendaId}`);
+            // Check if chat exists
+            let chat = await this.prisma.chat.findUnique({
+                where: {
+                    cotizacionId_tiendaId: {
+                        cotizacionId,
+                        tiendaId
+                    }
                 }
             });
+
+            if (!chat) {
+                console.log('Chat not found, creating new one');
+                // Get Taller ID from Cotizacion
+                const cotizacion = await this.prisma.cotizacion.findUnique({
+                    where: { id: cotizacionId },
+                    select: { tallerId: true }
+                });
+
+                if (!cotizacion) {
+                    console.error(`Quotation ${cotizacionId} not found`);
+                    throw new Error('Quotation not found');
+                }
+
+                chat = await this.prisma.chat.create({
+                    data: {
+                        cotizacionId,
+                        tiendaId,
+                        tallerId: cotizacion.tallerId
+                    }
+                });
+                console.log('Chat created:', chat.id);
+            } else {
+                console.log('Chat found:', chat.id);
+            }
+
+            return chat;
+        } catch (error) {
+            console.error('Service Error initializing chat:', error);
+            throw error;
         }
-
-        return chat;
     }
 
     async getMessages(chatId: string) {
