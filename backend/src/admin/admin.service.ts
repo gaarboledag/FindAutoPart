@@ -133,48 +133,34 @@ export class AdminService {
             throw new Error('User not found');
         }
 
-        // 1. If TALLER
-        if (user.role === 'TALLER' && user.taller) {
-            // Delete associated quotatons (cascades items, offers, chats)
-            // Need to manually delete Pedidos where this taller is involved
-            await this.prisma.pedido.deleteMany({
-                where: { tallerId: user.taller.id },
+        return this.prisma.$transaction(async (tx) => {
+            // 1. Clean up Taller dependencies if profile exists (regardless of role)
+            if (user.taller) {
+                // Delete associated Pedidos first (No Cascade)
+                await tx.pedido.deleteMany({
+                    where: { tallerId: user.taller.id },
+                });
+
+                // Cotizaciones and Chats will cascade from Taller delete
+                // But we can be explicit to be safe or just let cascade handle it.
+                // Given constraints, CASCADE on Taller is configured for Cotizacion and Chat.
+            }
+
+            // 2. Clean up Tienda dependencies if profile exists (regardless of role)
+            if (user.tienda) {
+                // Delete associated Pedidos first (No Cascade)
+                await tx.pedido.deleteMany({
+                    where: { tiendaId: user.tienda.id },
+                });
+
+                // Offers, Parts, Views, Chats will cascade from Tienda delete
+            }
+
+            // 3. Delete the User
+            // This will trigger CASCADE delete on Taller and Tienda tables
+            return tx.user.delete({
+                where: { id: userId },
             });
-
-            // Delete quotations (cascades)
-            await this.prisma.cotizacion.deleteMany({
-                where: { tallerId: user.taller.id },
-            });
-
-            // Delete Taller profile (cascades from user delete, but safe to be explicit)
-        }
-
-        // 2. If TIENDA
-        if (user.role === 'TIENDA' && user.tienda) {
-            // Delete offers made by this store
-            // Delete pedidos where this store is involved
-            await this.prisma.pedido.deleteMany({
-                where: { tiendaId: user.tienda.id },
-            });
-
-            await this.prisma.oferta.deleteMany({
-                where: { tiendaId: user.tienda.id },
-            });
-
-            // Delete inventory/repuestos
-            await this.prisma.repuesto.deleteMany({
-                where: { tiendaId: user.tienda.id },
-            });
-
-            // Delete views
-            await this.prisma.cotizacionView.deleteMany({
-                where: { tiendaId: user.tienda.id },
-            });
-        }
-
-        // 3. Delete User (Cascades profile, messages, etc.)
-        return this.prisma.user.delete({
-            where: { id: userId },
         });
     }
 
