@@ -11,6 +11,7 @@ import { OfertasModule } from './ofertas/ofertas.module';
 import { PedidosModule } from './pedidos/pedidos.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthModule } from './health/health.module';
+import { ChatsModule } from './chats/chats.module';
 
 @Module({
     imports: [
@@ -41,6 +42,7 @@ import { HealthModule } from './health/health.module';
         PedidosModule,
         AdminModule,
         HealthModule,
+        ChatsModule,
     ],
     controllers: [],
     providers: [],

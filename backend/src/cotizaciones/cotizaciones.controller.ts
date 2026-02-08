@@ -18,13 +18,24 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Role, CotizacionStatus } from '@prisma/client';
+import { StorageService } from '../common/services/storage.service';
 
 @ApiTags('cotizaciones')
 @Controller('cotizaciones')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class CotizacionesController {
-    constructor(private readonly cotizacionesService: CotizacionesService) { }
+    constructor(
+        private readonly cotizacionesService: CotizacionesService,
+        private readonly storageService: StorageService
+    ) { }
+
+    @Post('upload-url')
+    @Roles(Role.TALLER, Role.TIENDA)
+    @ApiOperation({ summary: 'Get presigned URL for image upload' })
+    async getUploadUrl(@CurrentUser() user: any, @Body() body: { filename: string, contentType: string }) {
+        return this.storageService.generatePresignedUrl(body.filename, body.contentType);
+    }
 
     @Post()
     @Roles(Role.TALLER)

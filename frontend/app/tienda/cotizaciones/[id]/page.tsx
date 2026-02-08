@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Send, Package, AlertCircle, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Send, Package, AlertCircle, CheckCircle, Zap, Calendar, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { ChatWindow } from '@/components/chat/ChatWindow'
+import { useAuthStore } from '@/store/authStore'
 
 type OfferItem = {
     nombre: string
@@ -30,15 +32,27 @@ export default function EnviarOfertaPage() {
     const [submitting, setSubmitting] = useState(false)
 
     // Offer data
+    const [deliveryMode, setDeliveryMode] = useState<'immediate' | 'custom'>('custom')
     const [diasEntrega, setDiasEntrega] = useState(3)
     const [comentarios, setComentarios] = useState('')
     const [items, setItems] = useState<OfferItem[]>([])
 
+    // Chat state
+    const [isChatOpen, setIsChatOpen] = useState(false)
+    const [currentUserId, setCurrentUserId] = useState('')
+
+    // Auth
+    const { user } = useAuthStore()
+
     useEffect(() => {
+        if (user?.id) {
+            setCurrentUserId(user.id)
+        }
+
         if (id) {
             loadCotizacion()
         }
-    }, [id])
+    }, [id, user])
 
     const loadCotizacion = async () => {
         try {
@@ -75,6 +89,15 @@ export default function EnviarOfertaPage() {
         }, 0)
     }
 
+    const handleDeliveryModeChange = (mode: 'immediate' | 'custom') => {
+        setDeliveryMode(mode)
+        if (mode === 'immediate') {
+            setDiasEntrega(0)
+        } else {
+            setDiasEntrega(1)
+        }
+    }
+
     const handleSubmit = async () => {
         try {
             setSubmitting(true)
@@ -86,14 +109,14 @@ export default function EnviarOfertaPage() {
                 return
             }
 
-            if (diasEntrega < 1) {
-                alert('Los días de entrega deben ser al menos 1')
+            if (deliveryMode === 'custom' && diasEntrega < 1) {
+                alert('Los días de entrega deben ser al menos 1 para envíos programados')
                 return
             }
 
             // Prepare offer data
             const offerData = {
-                diasEntrega,
+                diasEntrega: deliveryMode === 'immediate' ? 0 : diasEntrega,
                 comentarios: comentarios || '',
                 items: items.map(item => ({
                     nombre: item.nombre,
@@ -139,6 +162,17 @@ export default function EnviarOfertaPage() {
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-500">
+            {/* Chat Window */}
+            {isChatOpen && (
+                <ChatWindow
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    cotizacionId={cotizacion.id}
+                    currentUserId={currentUserId}
+                    title={`Chat con ${cotizacion.taller?.nombre || 'El Taller'}`}
+                />
+            )}
+
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Link href="/tienda/cotizaciones">
@@ -148,8 +182,20 @@ export default function EnviarOfertaPage() {
                     </Button>
                 </Link>
                 <div className="flex-1">
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">Enviar Oferta</h1>
-                    <p className="text-muted-foreground mt-1">{cotizacion.titulo}</p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold font-heading text-primary-light">Enviar Oferta</h1>
+                            <p className="text-muted-foreground mt-1">{cotizacion.titulo}</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsChatOpen(true)}
+                            className="gap-2"
+                        >
+                            <MessageSquare className="h-4 w-4 text-blue-600" />
+                            Chat con Taller
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -187,24 +233,43 @@ export default function EnviarOfertaPage() {
                         <h3 className="font-semibold">Repuestos y Precios</h3>
                         {items.map((item, index) => (
                             <div key={index} className="p-4 border rounded-lg space-y-3">
-                                <div className="flex items-start justify-between">
+                                <div className="flex items-start justify-between gap-4">
+                                    {cotizacion.items[index]?.imagenUrl && (
+                                        <div
+                                            className="h-20 w-20 flex-shrink-0 bg-white rounded border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                                            onClick={() => window.open(cotizacion.items[index].imagenUrl, '_blank')}
+                                            title="Ver imagen completa"
+                                        >
+                                            <img
+                                                src={cotizacion.items[index].imagenUrl}
+                                                alt={item.nombre}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    )}
                                     <div className="flex-1">
                                         <p className="font-medium">{item.nombre}</p>
                                         <p className="text-sm text-muted-foreground">Cantidad: {item.cantidad}</p>
+                                        {cotizacion.items[index]?.descripcion && (
+                                            <p className="text-sm text-muted-foreground mt-1">{cotizacion.items[index].descripcion}</p>
+                                        )}
+                                        {cotizacion.items[index]?.marca && (
+                                            <p className="text-sm text-muted-foreground">Marca pref: {cotizacion.items[index].marca}</p>
+                                        )}
                                     </div>
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer pt-1">
                                         <input
                                             type="checkbox"
                                             checked={item.disponible}
                                             onChange={(e) => updateItem(index, 'disponible', e.target.checked)}
                                             className="w-4 h-4"
                                         />
-                                        <span className="text-sm">Disponible</span>
+                                        <span className="text-sm font-medium">Disponible</span>
                                     </label>
                                 </div>
 
                                 {item.disponible && (
-                                    <div className="grid gap-3 md:grid-cols-3">
+                                    <div className="grid gap-3 md:grid-cols-3 pl-0 md:pl-24">
                                         <div className="space-y-2 md:col-span-2">
                                             <Label>Precio Unitario (COP) *</Label>
                                             <Input
@@ -228,28 +293,71 @@ export default function EnviarOfertaPage() {
                         ))}
                     </div>
 
-                    {/* Delivery & Comments */}
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="diasEntrega">Días de Entrega *</Label>
-                            <Input
-                                id="diasEntrega"
-                                type="number"
-                                min="1"
-                                value={diasEntrega}
-                                onChange={(e) => setDiasEntrega(parseInt(e.target.value) || 1)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Tiempo estimado para tener los repuestos listos
-                            </p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Total de la Oferta</Label>
-                            <div className="h-10 flex items-center px-3 bg-green-500/10 border border-green-500/30 rounded">
-                                <p className="text-2xl font-bold text-green-600">
-                                    ${total.toLocaleString('es-CO')}
-                                </p>
+                    {/* Delivery Options */}
+                    <div className="space-y-4">
+                        <Label>Tiempo de Entrega</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Option 1: Immediate */}
+                            <div
+                                onClick={() => handleDeliveryModeChange('immediate')}
+                                className={`
+                                    cursor-pointer border rounded-lg p-4 flex items-center gap-4 transition-all
+                                    ${deliveryMode === 'immediate'
+                                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                        : 'border-border hover:border-primary/50'}
+                                `}
+                            >
+                                <div className={`p-2 rounded-full ${deliveryMode === 'immediate' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <Zap className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">Entrega Inmediata</p>
+                                    <p className="text-xs text-muted-foreground">Disponible para recoger/enviar ya</p>
+                                </div>
                             </div>
+
+                            {/* Option 2: Custom Days */}
+                            <div
+                                onClick={() => handleDeliveryModeChange('custom')}
+                                className={`
+                                    cursor-pointer border rounded-lg p-4 flex items-center gap-4 transition-all
+                                    ${deliveryMode === 'custom'
+                                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                        : 'border-border hover:border-primary/50'}
+                                `}
+                            >
+                                <div className={`p-2 rounded-full ${deliveryMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <Calendar className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium">Programar Entrega</p>
+                                    <p className="text-xs text-muted-foreground">Define los días hábiles</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Days Input (Only visible if custom) */}
+                        {deliveryMode === 'custom' && (
+                            <div className="mt-2 animate-in slide-in-from-top-2 fade-in duration-200">
+                                <Label htmlFor="diasEntrega">Días Hábiles</Label>
+                                <Input
+                                    id="diasEntrega"
+                                    type="number"
+                                    min="1"
+                                    className="max-w-[150px] mt-1"
+                                    value={diasEntrega}
+                                    onChange={(e) => setDiasEntrega(parseInt(e.target.value) || 0)}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Total de la Oferta</Label>
+                        <div className="h-12 flex items-center px-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                            <p className="text-2xl font-bold text-green-600">
+                                ${(total).toLocaleString('es-CO')}
+                            </p>
                         </div>
                     </div>
 
@@ -265,8 +373,8 @@ export default function EnviarOfertaPage() {
                     </div>
 
                     {/* Summary */}
-                    <div className="border-t pt-4">
-                        <div className="grid gap-3 md:grid-cols-3 text-sm">
+                    <div className="border-t pt-6">
+                        <div className="grid gap-4 md:grid-cols-3 text-sm">
                             <div className="flex items-center gap-2">
                                 <Package className="h-4 w-4 text-muted-foreground" />
                                 <span><strong>{itemsDisponibles}</strong> de <strong>{items.length}</strong> items disponibles</span>
@@ -276,8 +384,17 @@ export default function EnviarOfertaPage() {
                                 <span>Cobertura: <strong>{Math.round((itemsDisponibles / items.length) * 100)}%</strong></span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <AlertCircle className="h-4 w-4 text-blue-500" />
-                                <span>Entrega en <strong>{diasEntrega}</strong> día{diasEntrega !== 1 ? 's' : ''}</span>
+                                {(deliveryMode === 'immediate' || diasEntrega === 0) ? (
+                                    <>
+                                        <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                        <span className="font-medium text-yellow-600">¡Entrega Inmediata!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle className="h-4 w-4 text-blue-500" />
+                                        <span>Entrega en <strong>{diasEntrega}</strong> día{diasEntrega !== 1 ? 's' : ''}</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

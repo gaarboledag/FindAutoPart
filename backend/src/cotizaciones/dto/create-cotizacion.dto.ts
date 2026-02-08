@@ -23,6 +23,11 @@ export class CotizacionItemDto {
     @IsOptional()
     marca?: string;
 
+    @ApiProperty({ example: 'https://r2.cloudflarestorage.com/...', required: false })
+    @IsString()
+    @IsOptional()
+    imagenUrl?: string;
+
     @ApiProperty({ example: 2 })
     @IsNumber()
     @Min(1)

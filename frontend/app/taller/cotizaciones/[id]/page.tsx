@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { cotizacionesAPI, ofertasAPI, pedidosAPI } from '@/lib/api'
+import { cotizacionesAPI, ofertasAPI, pedidosAPI, chatsAPI } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, FileText, Clock, Package, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Clock, Package, TrendingUp, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { ChatWindow } from '@/components/chat/ChatWindow'
+import { useAuthStore } from '@/store/authStore'
 
 type Oferta = {
     id: string
@@ -46,11 +48,32 @@ export default function CotizacionDetailPage() {
     const [loading, setLoading] = useState(true)
     const [creatingPedido, setCreatingPedido] = useState(false)
 
+    // Chat state
+    const [isChatOpen, setIsChatOpen] = useState(false)
+    const [selectedTiendaId, setSelectedTiendaId] = useState<string | undefined>(undefined)
+    const [selectedTiendaName, setSelectedTiendaName] = useState('')
+    const [currentUserId, setCurrentUserId] = useState('')
+    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({}) // tiendaId -> count
+    const [activeChats, setActiveChats] = useState<any[]>([]) // All chats
+
+    const { user } = useAuthStore()
+
     useEffect(() => {
+        if (user?.id) {
+            setCurrentUserId(user.id)
+        }
+
         if (id) {
             loadData()
         }
-    }, [id])
+    }, [id, user])
+
+    // Reload chat status when chat is closed to update counts
+    useEffect(() => {
+        if (!isChatOpen && id) {
+            loadChatStatus()
+        }
+    }, [isChatOpen, id])
 
     const loadData = async () => {
         try {
@@ -60,10 +83,28 @@ export default function CotizacionDetailPage() {
             ])
             setCotizacion(cotizData)
             setOfertas(ofertasData)
+            loadChatStatus()
         } catch (error) {
             console.error('Error loading data:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const loadChatStatus = async () => {
+        try {
+            const chats = await chatsAPI.getChatsByCotizacion(id);
+            setActiveChats(chats); // Store all chats
+
+            const counts: Record<string, number> = {};
+            chats.forEach((chat: any) => {
+                if (chat.tiendaId) {
+                    counts[chat.tiendaId] = chat.unreadCount || 0;
+                }
+            });
+            setUnreadCounts(counts);
+        } catch (error) {
+            console.error('Error loading chat status:', error);
         }
     }
 
@@ -84,6 +125,15 @@ export default function CotizacionDetailPage() {
         } finally {
             setCreatingPedido(false)
         }
+    }
+
+    const openChat = async (tiendaId: string, tiendaName: string) => {
+        setSelectedTiendaId(tiendaId)
+        setSelectedTiendaName(tiendaName)
+        setIsChatOpen(true)
+
+        // Optimistically clear unread count
+        setUnreadCounts(prev => ({ ...prev, [tiendaId]: 0 }));
     }
 
     const getBestOffer = () => {
@@ -120,8 +170,25 @@ export default function CotizacionDetailPage() {
 
     const bestOffer = getBestOffer()
 
+    // Filter chats that don't have a corresponding offer
+    const chatsWithoutOffer = activeChats.filter(chat =>
+        !ofertas.some(oferta => oferta.tienda.id === chat.tiendaId)
+    );
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Chat Window */}
+            {isChatOpen && (
+                <ChatWindow
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    cotizacionId={cotizacion.id}
+                    tiendaId={selectedTiendaId}
+                    currentUserId={currentUserId}
+                    title={`Chat con ${selectedTiendaName}`}
+                />
+            )}
+
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Link href="/taller/cotizaciones">
@@ -183,16 +250,70 @@ export default function CotizacionDetailPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {cotizacion.items?.map((item: any, index: number) => (
-                            <div key={item.id} className="p-3 bg-accent/5 border rounded text-sm">
-                                <p className="font-medium">{index + 1}. {item.nombre}</p>
-                                {item.marca && <p className="text-xs text-muted-foreground">Marca: {item.marca}</p>}
-                                {item.descripcion && <p className="text-xs text-muted-foreground">{item.descripcion}</p>}
-                                <p className="text-xs text-muted-foreground">Cantidad: {item.cantidad}</p>
+                            <div key={item.id} className="p-4 bg-accent/5 border rounded-lg text-sm">
+                                <div className="flex flex-col md:flex-row gap-4 items-start">
+                                    {item.imagenUrl && (
+                                        <div
+                                            className="h-32 w-full md:w-24 md:h-24 flex-shrink-0 bg-white rounded border overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                            onClick={() => window.open(item.imagenUrl, '_blank')}
+                                        >
+                                            <img
+                                                src={item.imagenUrl}
+                                                alt={item.nombre}
+                                                className="h-full w-full object-contain"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 space-y-1">
+                                        <p className="font-medium text-base">{index + 1}. {item.nombre}</p>
+                                        {item.marca && <p className="text-sm text-muted-foreground"><span className="font-semibold">Marca:</span> {item.marca}</p>}
+                                        {item.descripcion && <p className="text-sm text-muted-foreground">{item.descripcion}</p>}
+                                        <p className="text-sm text-muted-foreground"><span className="font-semibold">Cantidad:</span> {item.cantidad}</p>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Chats Section - NEW */}
+            {chatsWithoutOffer.length > 0 && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+                    <h2 className="text-2xl font-bold font-heading mb-4">Mensajes de Tiendas (Sin Oferta)</h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {chatsWithoutOffer.map((chat) => {
+                            const unreadMessages = chat.unreadCount || 0;
+                            return (
+                                <Card key={chat.id} className="border-blue-500/30">
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                        <div>
+                                            <p className="font-semibold">{chat.tienda.nombre}</p>
+                                            <p className="text-sm text-muted-foreground">Consultando sobre la cotización</p>
+                                        </div>
+                                        <Button
+
+                                            size="sm"
+                                            onClick={() => openChat(chat.tiendaId, chat.tienda.nombre)}
+                                            className="relative gap-2"
+                                        >
+                                            <MessageSquare className="h-4 w-4" />
+                                            Responder
+                                            {unreadMessages > 0 && (
+                                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                </span>
+                                            )}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
 
             {/* Ofertas Section */}
             <div>
@@ -224,6 +345,8 @@ export default function CotizacionDetailPage() {
                     <div className="grid gap-4">
                         {ofertas.map((oferta) => {
                             const isBest = bestOffer && oferta.id === bestOffer.id
+                            const unreadMessages = unreadCounts[oferta.tienda.id] || 0;
+
                             return (
                                 <Card key={oferta.id} className={isBest ? 'border-green-500 border-2' : ''}>
                                     <CardHeader>
@@ -240,17 +363,35 @@ export default function CotizacionDetailPage() {
                                                 </div>
                                                 <p className="text-sm text-muted-foreground">{oferta.tienda.ciudad}</p>
                                             </div>
-                                            {cotizacion.status === 'ABIERTA' && (
+                                            <div className="flex items-center gap-2">
                                                 <Button
-                                                    onClick={() => handleSelectOffer(oferta.id, oferta.tienda)}
-                                                    disabled={creatingPedido}
-                                                    variant={isBest ? 'glow' : 'default'}
-                                                    className="gap-2"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => openChat(oferta.tienda.id, oferta.tienda.nombre)}
+                                                    title="Chatear con la tienda"
+                                                    className="relative gap-2 border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                                                 >
-                                                    <Package className="h-4 w-4" />
-                                                    Seleccionar
+                                                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                                                    Chatear
+                                                    {unreadMessages > 0 && (
+                                                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                        </span>
+                                                    )}
                                                 </Button>
-                                            )}
+                                                {cotizacion.status === 'ABIERTA' && (
+                                                    <Button
+                                                        onClick={() => handleSelectOffer(oferta.id, oferta.tienda)}
+                                                        disabled={creatingPedido}
+                                                        variant={isBest ? 'glow' : 'default'}
+                                                        className="gap-2"
+                                                    >
+                                                        <Package className="h-4 w-4" />
+                                                        Seleccionar
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     </CardHeader>
                                     <CardContent>

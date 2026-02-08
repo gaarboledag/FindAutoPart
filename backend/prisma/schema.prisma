@@ -50,6 +50,7 @@ model User {
   // Relationships
   taller    Taller?
   tienda    Tienda?
+  messages  ChatMessage[] // Sent messages
   
   @@map("users")
 }
@@ -76,6 +77,7 @@ model Taller {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   cotizaciones  Cotizacion[]
   pedidos       Pedido[]
+  chats         Chat[]
   
   @@map("talleres")
 }
@@ -110,6 +112,7 @@ model Tienda {
   repuestos     Repuesto[]
   ofertas       Oferta[]
   pedidos       Pedido[]
+  chats         Chat[]
   
   @@map("tiendas")
 }
@@ -177,6 +180,7 @@ model Cotizacion {
   items       CotizacionItem[]
   ofertas     Oferta[]
   pedido      Pedido?
+  chats       Chat[]
   
   @@map("cotizaciones")
 }
@@ -191,6 +195,7 @@ model CotizacionItem {
   descripcion   String?
   marca         String?
   cantidad      Int      @default(1)
+  imagenUrl     String?  // R2 Image URL
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -280,6 +285,47 @@ model Pedido {
   tienda          Tienda        @relation(fields: [tiendaId], references: [id])
   
   @@map("pedidos")
+}
+
+// ========================================
+// CHAT FUNCTIONALITY
+// ========================================
+
+model Chat {
+  id           String   @id @default(uuid()) @db.Uuid
+  cotizacionId String   @db.Uuid
+  tiendaId     String   @db.Uuid
+  tallerId     String   @db.Uuid
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  cotizacion   Cotizacion    @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  tienda       Tienda        @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+  taller       Taller        @relation(fields: [tallerId], references: [id], onDelete: Cascade)
+  messages     ChatMessage[]
+
+  @@unique([cotizacionId, tiendaId]) // One chat per store per quotation
+  @@map("chats")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  chatId    String   @db.Uuid
+  senderId  String   @db.Uuid // ID of the User who sent it
+  
+  content   String
+  imageUrl  String?  // Optional R2 image URL
+  isRead    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+
+  // Relationships
+  chat      Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
 }
 
 // ========================================

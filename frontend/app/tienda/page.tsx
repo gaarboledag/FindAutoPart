@@ -19,6 +19,7 @@ export default function TiendaDashboard() {
         pedidos: 0,
     })
     const [loading, setLoading] = useState(true)
+    const [deliveredOrders, setDeliveredOrders] = useState<any[]>([])
 
     useEffect(() => {
         loadDashboard()
@@ -26,16 +27,22 @@ export default function TiendaDashboard() {
 
     const loadDashboard = async () => {
         try {
-            const [tiendaData, cotizaciones, pedidos] = await Promise.all([
+            const [tiendaData, cotizaciones, activePedidos, deliveredPedidos] = await Promise.all([
                 tiendasAPI.getMe(),
                 cotizacionesAPI.getAvailable(),
-                pedidosAPI.getAll(),
+                pedidosAPI.getAll(), // All active/pending orders (backend filters by role, frontend can filter status if needed, but for now we want delivered specifically)
+                pedidosAPI.getAll('ENTREGADO'), // Fetch specifically delivered orders
             ])
 
             setTienda(tiendaData)
+            setDeliveredOrders(deliveredPedidos)
+
+            // Filter active orders for the stats count (excluding delivered/cancelled if needed, or just use total)
+            const activeCount = activePedidos.filter((p: any) => p.status !== 'ENTREGADO' && p.status !== 'CANCELADO').length
+
             setStats({
                 cotizacionesDisponibles: cotizaciones.length,
-                pedidos: pedidos.length,
+                pedidos: activeCount,
             })
         } catch (error: any) {
             if (error.response?.status === 404) {
@@ -170,6 +177,50 @@ export default function TiendaDashboard() {
                         </CardContent>
                     </Card>
                 )}
+            </div>
+            {/* Delivered Orders Section */}
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold font-heading tracking-tight">Pedidos Entregados</h2>
+                <Card>
+                    <CardContent className="p-0">
+                        {deliveredOrders.length === 0 ? (
+                            <div className="p-8 text-center text-muted-foreground">
+                                No hay pedidos entregados aún.
+                            </div>
+                        ) : (
+                            <div className="relative w-full overflow-auto">
+                                <table className="w-full caption-bottom text-sm">
+                                    <thead className="[&_tr]:border-b">
+                                        <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">ID</th>
+                                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Fecha</th>
+                                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Taller</th>
+                                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Total</th>
+                                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="[&_tr:last-child]:border-0">
+                                        {deliveredOrders.map((pedido: any) => (
+                                            <tr key={pedido.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                                <td className="p-4 align-middle font-mono text-xs">{pedido.id.slice(0, 8)}</td>
+                                                <td className="p-4 align-middle">
+                                                    {new Date(pedido.fechaEntregado || pedido.updatedAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="p-4 align-middle">{pedido.taller?.nombre}</td>
+                                                <td className="p-4 align-middle font-medium">
+                                                    ${pedido.total.toLocaleString()}
+                                                </td>
+                                                <td className="p-4 align-middle">
+                                                    <Badge variant="success">ENTREGADO</Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )

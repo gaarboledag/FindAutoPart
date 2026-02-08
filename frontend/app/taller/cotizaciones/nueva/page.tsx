@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Upload, Image as ImageIcon, Loader2 } from 'lucide-react'
 
 type CotizacionItem = {
     id: string
@@ -17,12 +17,14 @@ type CotizacionItem = {
     descripcion?: string
     marca?: string
     cantidad: number
+    imagenUrl?: string
 }
 
 export default function NuevaCotizacionPage() {
     const router = useRouter()
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [uploading, setUploading] = useState<Record<string, boolean>>({})
 
     // Step 1: Vehicle Data
     const [vehicleData, setVehicleData] = useState({
@@ -59,6 +61,32 @@ export default function NuevaCotizacionPage() {
         ))
     }
 
+    const handleImageUpload = async (id: string, file: File) => {
+        if (!file) return
+
+        try {
+            setUploading(prev => ({ ...prev, [id]: true }))
+
+            // 1. Get Presigned URL
+            const { uploadUrl, publicUrl } = await cotizacionesAPI.getUploadUrl(file.name, file.type)
+
+            // 2. Upload to R2
+            await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type }
+            })
+
+            // 3. Save Public URL
+            updateItem(id, 'imagenUrl', publicUrl)
+        } catch (error) {
+            console.error('Upload error:', error)
+            alert('Error al subir la imagen')
+        } finally {
+            setUploading(prev => ({ ...prev, [id]: false }))
+        }
+    }
+
     const handleSubmit = async () => {
         try {
             setLoading(true)
@@ -82,12 +110,14 @@ export default function NuevaCotizacionPage() {
                     nombre: item.nombre,
                     descripcion: item.descripcion || '',
                     marca: item.marca || '',
-                    cantidad: item.cantidad
+                    cantidad: item.cantidad,
+                    imagenUrl: item.imagenUrl || null
                 }))
             }
 
             await cotizacionesAPI.create(cotizacionData)
 
+            alert('¡Cotización creada exitosamente!')
             router.push('/taller/cotizaciones')
         } catch (error: any) {
             console.error('Error creating quotation:', error)
@@ -248,7 +278,7 @@ export default function NuevaCotizacionPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {items.map((item, index) => (
-                            <div key={item.id} className="p-4 border rounded-lg space-y-3">
+                            <div key={item.id} className="p-4 border rounded-lg space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h4 className="font-medium">Repuesto #{index + 1}</h4>
                                     {items.length > 1 && (
@@ -301,6 +331,61 @@ export default function NuevaCotizacionPage() {
                                         />
                                     </div>
                                 </div>
+
+                                {/* Image Upload */}
+                                <div className="space-y-2">
+                                    <Label>Imagen de Referencia</Label>
+                                    <div className="flex items-center gap-4">
+                                        {item.imagenUrl ? (
+                                            <div className="relative h-20 w-20 rounded-md overflow-hidden border bg-accent/5 group">
+                                                <img
+                                                    src={item.imagenUrl}
+                                                    alt="Preview"
+                                                    className="h-full w-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={() => updateItem(item.id, 'imagenUrl', undefined)}
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className={`
+                                                flex-1 border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center gap-2
+                                                hover:bg-accent/5 transition-colors cursor-pointer
+                                                ${uploading[item.id] ? 'opacity-50 pointer-events-none' : ''}
+                                            `}>
+                                                <div className="relative w-full text-center">
+                                                    <Input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0]
+                                                            if (file) handleImageUpload(item.id, file)
+                                                        }}
+                                                        disabled={uploading[item.id]}
+                                                    />
+                                                    <div className="flex flex-col items-center">
+                                                        {uploading[item.id] ? (
+                                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                        ) : (
+                                                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                                        )}
+                                                        <span className="text-xs text-muted-foreground mt-1">
+                                                            {uploading[item.id] ? 'Subiendo...' : 'Click para subir imagen'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ))}
 
@@ -350,11 +435,18 @@ export default function NuevaCotizacionPage() {
                             <h3 className="font-semibold mb-3">Repuestos Solicitados ({items.filter(i => i.nombre.trim()).length})</h3>
                             <div className="space-y-2">
                                 {items.filter(item => item.nombre.trim()).map((item, index) => (
-                                    <div key={item.id} className="p-3 bg-accent/5 border rounded-lg text-sm">
-                                        <p className="font-medium">{index + 1}. {item.nombre}</p>
-                                        {item.marca && <p className="text-muted-foreground">Marca: {item.marca}</p>}
-                                        {item.descripcion && <p className="text-muted-foreground">{item.descripcion}</p>}
-                                        <p className="text-muted-foreground">Cantidad: {item.cantidad}</p>
+                                    <div key={item.id} className="p-3 bg-accent/5 border rounded-lg text-sm flex gap-3">
+                                        {item.imagenUrl && (
+                                            <div className="h-16 w-16 flex-shrink-0 bg-white rounded border overflow-hidden">
+                                                <img src={item.imagenUrl} alt={item.nombre} className="h-full w-full object-contain" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="font-medium">{index + 1}. {item.nombre}</p>
+                                            {item.marca && <p className="text-muted-foreground">Marca: {item.marca}</p>}
+                                            {item.descripcion && <p className="text-muted-foreground">{item.descripcion}</p>}
+                                            <p className="text-muted-foreground">Cantidad: {item.cantidad}</p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

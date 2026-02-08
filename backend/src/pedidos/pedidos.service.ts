@@ -87,8 +87,12 @@ export class PedidosService {
         return pedido;
     }
 
-    async findAll(userId: string, role: string) {
+    async findAll(userId: string, role: string, status?: string) {
         const where: any = {};
+
+        if (status) {
+            where.status = status;
+        }
 
         if (role === 'TALLER') {
             const taller = await this.prisma.taller.findUnique({

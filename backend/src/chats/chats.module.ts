@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { ChatsService } from './chats.service';
+import { ChatsController } from './chats.controller';
+import { StorageService } from '../common/services/storage.service';
+import { ChatsGateway } from './chats.gateway';
+
+@Module({
+    controllers: [ChatsController],
+    providers: [ChatsService, StorageService, ChatsGateway],
+    exports: [ChatsService]
+})
+export class ChatsModule { }

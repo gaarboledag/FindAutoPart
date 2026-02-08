@@ -184,6 +184,11 @@ export const cotizacionesAPI = {
         return response.data;
     },
 
+    getUploadUrl: async (filename: string, contentType: string) => {
+        const response = await api.post('/cotizaciones/upload-url', { filename, contentType });
+        return response.data;
+    },
+
     getAll: async (status?: string) => {
         const response = await api.get('/cotizaciones', { params: { status } });
         return response.data;
@@ -208,6 +213,7 @@ export const cotizacionesAPI = {
         const response = await api.post(`/cotizaciones/${id}/close`);
         return response.data;
     },
+
     delete: async (id: string) => {
         const response = await api.delete(`/cotizaciones/${id}`);
         return response.data;
@@ -254,8 +260,8 @@ export const pedidosAPI = {
         return response.data;
     },
 
-    getAll: async () => {
-        const response = await api.get('/pedidos');
+    getAll: async (status?: string) => {
+        const response = await api.get('/pedidos', { params: { status } });
         return response.data;
     },
 
@@ -424,10 +430,37 @@ export const adminAPI = {
     },
 };
 
+// Chats API
+export const chatsAPI = {
+    init: async (cotizacionId: string, tiendaId?: string) => {
+        const response = await api.post('/chats/init', { cotizacionId, tiendaId });
+        return response.data;
+    },
+
+    getMessages: async (chatId: string) => {
+        const response = await api.get(`/chats/${chatId}/messages`);
+        return response.data;
+    },
+
+    sendMessage: async (chatId: string, content: string, imageUrl?: string) => {
+        const response = await api.post(`/chats/${chatId}/messages`, { content, imageUrl });
+        return response.data;
+    },
+
+    getChatsByCotizacion: async (cotizacionId: string) => {
+        const response = await api.get(`/chats/cotizacion/${cotizacionId}`);
+        return response.data;
+    },
+
+    markAsRead: async (chatId: string) => {
+        const response = await api.put(`/chats/${chatId}/read`);
+        return response.data;
+    }
+};
+
 // Logout function
 export const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     window.location.href = '/auth/login';
 };
-

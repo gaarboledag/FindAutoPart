@@ -6,6 +6,7 @@ import {
     Patch,
     Param,
     UseGuards,
+    Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PedidosService } from './pedidos.service';
@@ -43,8 +44,8 @@ export class PedidosController {
     @Get()
     @Roles(Role.TALLER, Role.TIENDA, Role.ADMIN)
     @ApiOperation({ summary: 'Get all orders (filtered by role)' })
-    findAll(@CurrentUser() user: any) {
-        return this.pedidosService.findAll(user.userId, user.role);
+    findAll(@CurrentUser() user: any, @Query('status') status?: string) {
+        return this.pedidosService.findAll(user.userId, user.role, status);
     }
 
     @Get(':id')
