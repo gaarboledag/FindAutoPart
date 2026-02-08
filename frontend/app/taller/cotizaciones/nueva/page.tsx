@@ -111,7 +111,7 @@ export default function NuevaCotizacionPage() {
                     descripcion: item.descripcion || '',
                     marca: item.marca || '',
                     cantidad: item.cantidad,
-                    imagenUrl: item.imagenUrl || null
+                    imagenUrl: item.imagenUrl || undefined
                 }))
             }
 

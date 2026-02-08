@@ -43,16 +43,25 @@ export class CotizacionesController {
     @Roles(Role.TALLER)
     @ApiOperation({ summary: 'Create a new quotation' })
     async create(@CurrentUser() user: any, @Body() dto: CreateCotizacionDto) {
-        const taller = await this.cotizacionesService['prisma'].taller.findUnique({
-            where: { userId: user.userId },
-            select: { id: true },
-        });
+        try {
+            console.log('Creating quotation for user:', user.userId);
+            console.log('DTO:', JSON.stringify(dto));
 
-        if (!taller) {
-            throw new NotFoundException('Workshop profile not found');
+            const taller = await this.cotizacionesService['prisma'].taller.findUnique({
+                where: { userId: user.userId },
+                select: { id: true },
+            });
+
+            if (!taller) {
+                console.error('Workshop profile not found for user:', user.userId);
+                throw new NotFoundException('Workshop profile not found');
+            }
+
+            return await this.cotizacionesService.create(taller.id, dto);
+        } catch (error) {
+            console.error('Error creating quotation:', error);
+            throw error;
         }
-
-        return this.cotizacionesService.create(taller.id, dto);
     }
 
     @Get()
