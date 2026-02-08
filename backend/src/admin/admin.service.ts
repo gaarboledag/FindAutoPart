@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -88,11 +89,92 @@ export class AdminService {
             where: { id: userId },
         });
 
+        if (!user) {
+            throw new Error('User not found');
+        }
+
         return this.prisma.user.update({
             where: { id: userId },
             data: {
                 isActive: !user.isActive,
             },
+        });
+    }
+
+    async updateUserPassword(userId: string, newPassword: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                password: hashedPassword,
+            },
+        });
+    }
+
+    async deleteUser(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                taller: true,
+                tienda: true,
+            },
+        });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // 1. If TALLER
+        if (user.role === 'TALLER' && user.taller) {
+            // Delete associated quotatons (cascades items, offers, chats)
+            // Need to manually delete Pedidos where this taller is involved
+            await this.prisma.pedido.deleteMany({
+                where: { tallerId: user.taller.id },
+            });
+
+            // Delete quotations (cascades)
+            await this.prisma.cotizacion.deleteMany({
+                where: { tallerId: user.taller.id },
+            });
+
+            // Delete Taller profile (cascades from user delete, but safe to be explicit)
+        }
+
+        // 2. If TIENDA
+        if (user.role === 'TIENDA' && user.tienda) {
+            // Delete offers made by this store
+            // Delete pedidos where this store is involved
+            await this.prisma.pedido.deleteMany({
+                where: { tiendaId: user.tienda.id },
+            });
+
+            await this.prisma.oferta.deleteMany({
+                where: { tiendaId: user.tienda.id },
+            });
+
+            // Delete inventory/repuestos
+            await this.prisma.repuesto.deleteMany({
+                where: { tiendaId: user.tienda.id },
+            });
+
+            // Delete views
+            await this.prisma.cotizacionView.deleteMany({
+                where: { tiendaId: user.tienda.id },
+            });
+        }
+
+        // 3. Delete User (Cascades profile, messages, etc.)
+        return this.prisma.user.delete({
+            where: { id: userId },
         });
     }
 

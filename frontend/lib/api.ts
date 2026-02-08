@@ -218,6 +218,16 @@ export const cotizacionesAPI = {
         const response = await api.delete(`/cotizaciones/${id}`);
         return response.data;
     },
+
+    getUnreadCount: async () => {
+        const response = await api.get('/cotizaciones/tienda/unread-count');
+        return response.data;
+    },
+
+    markAsViewed: async (id: string) => {
+        const response = await api.post(`/cotizaciones/${id}/view`);
+        return response.data;
+    },
 };
 
 // Ofertas API
@@ -305,6 +315,16 @@ export const adminAPI = {
 
     getUserMetrics: async (userId: string) => {
         const response = await api.get(`/admin/users/${userId}/metrics`);
+        return response.data;
+    },
+
+    deleteUser: async (userId: string) => {
+        const response = await api.delete(`/admin/users/${userId}`);
+        return response.data;
+    },
+
+    updateUserPassword: async (userId: string, password: string) => {
+        const response = await api.patch(`/admin/users/${userId}/password`, { password });
         return response.data;
     },
 

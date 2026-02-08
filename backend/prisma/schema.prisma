@@ -113,6 +113,7 @@ model Tienda {
   ofertas       Oferta[]
   pedidos       Pedido[]
   chats         Chat[]
+  views         CotizacionView[]
   
   @@map("tiendas")
 }
@@ -181,6 +182,7 @@ model Cotizacion {
   ofertas     Oferta[]
   pedido      Pedido?
   chats       Chat[]
+  views       CotizacionView[]
   
   @@map("cotizaciones")
 }
@@ -351,4 +353,21 @@ model Notification {
   createdAt   DateTime @default(now())
   
   @@map("notifications")
+}
+
+// ========================================
+// TRACKING VIEWS
+// ========================================
+
+model CotizacionView {
+  id            String     @id @default(uuid()) @db.Uuid
+  cotizacionId  String     @db.Uuid
+  tiendaId      String     @db.Uuid
+  viewedAt      DateTime   @default(now())
+
+  cotizacion    Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  tienda        Tienda     @relation(fields: [tiendaId], references: [id], onDelete: Cascade)
+
+  @@unique([cotizacionId, tiendaId]) // One view per store per quotation
+  @@map("cotizacion_views")
 }

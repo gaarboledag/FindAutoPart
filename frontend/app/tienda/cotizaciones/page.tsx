@@ -25,6 +25,7 @@ type Cotizacion = {
         ciudad: string
         region: string
     }
+    isViewed?: boolean
 }
 
 export default function CotizacionesDisponiblesPage() {
@@ -88,12 +89,17 @@ export default function CotizacionesDisponiblesPage() {
             ) : (
                 <div className="grid gap-4">
                     {cotizaciones.map((cotizacion) => (
-                        <Card key={cotizacion.id} className="hover:border-primary/50 transition-colors">
+                        <Card key={cotizacion.id} className={`hover:border-primary/50 transition-colors ${!cotizacion.isViewed ? 'border-l-4 border-l-blue-500 bg-blue-50/10' : ''}`}>
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1 flex-1">
                                         <CardTitle className="text-xl flex items-center gap-3">
                                             {cotizacion.titulo}
+                                            {!cotizacion.isViewed && (
+                                                <Badge className="bg-blue-500 hover:bg-blue-600 animate-pulse">
+                                                    NUEVO
+                                                </Badge>
+                                            )}
                                             <Badge variant="default" className="gap-1">
                                                 ABIERTA
                                             </Badge>

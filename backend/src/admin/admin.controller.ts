@@ -33,6 +33,23 @@ export class AdminController {
         return this.adminService.toggleUserStatus(id);
     }
 
+    @Delete('users/:id')
+    @ApiOperation({ summary: 'Delete user and all associated data (Admin only)' })
+    @ApiParam({ name: 'id', description: 'User ID' })
+    deleteUser(@Param('id') id: string) {
+        return this.adminService.deleteUser(id);
+    }
+
+    @Patch('users/:id/password')
+    @ApiOperation({ summary: 'Update user password (Admin only)' })
+    @ApiParam({ name: 'id', description: 'User ID' })
+    updateUserPassword(
+        @Param('id') id: string,
+        @Body('password') password: string,
+    ) {
+        return this.adminService.updateUserPassword(id, password);
+    }
+
     @Get('activity')
     @ApiOperation({ summary: 'Get recent platform activity (Admin only)' })
     getRecentActivity() {

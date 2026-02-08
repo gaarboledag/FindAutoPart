@@ -177,7 +177,24 @@ export class CotizacionesService {
             orderBy: { createdAt: 'desc' },
         });
 
-        return Promise.all(cotizaciones.map(c => this.enrichWithImages(c)));
+        // Create a map of viewed status
+        const views = await this.prisma.cotizacionView.findMany({
+            where: {
+                tiendaId,
+                cotizacionId: { in: cotizaciones.map(c => c.id) },
+            },
+            select: { cotizacionId: true },
+        });
+
+        const viewedIds = new Set(views.map(v => v.cotizacionId));
+
+        return Promise.all(cotizaciones.map(async c => {
+            const enriched = await this.enrichWithImages(c);
+            return {
+                ...enriched,
+                isViewed: viewedIds.has(c.id),
+            };
+        }));
     }
 
     async findOne(id: string) {
@@ -303,5 +320,57 @@ export class CotizacionesService {
         return this.prisma.cotizacion.delete({
             where: { id },
         });
+    }
+
+    async markAsViewed(cotizacionId: string, tiendaId: string) {
+        // Check if already viewed
+        const existingView = await this.prisma.cotizacionView.findUnique({
+            where: {
+                cotizacionId_tiendaId: {
+                    cotizacionId,
+                    tiendaId,
+                },
+            },
+        });
+
+        if (existingView) {
+            return existingView;
+        }
+
+        return this.prisma.cotizacionView.create({
+            data: {
+                cotizacionId,
+                tiendaId,
+            },
+        });
+    }
+
+    async getUnreadCount(tiendaId: string) {
+        const tienda = await this.prisma.tienda.findUnique({
+            where: { id: tiendaId },
+            select: { cobertura: true, categorias: true },
+        });
+
+        if (!tienda) return 0;
+
+        const unreadCount = await this.prisma.cotizacion.count({
+            where: {
+                status: CotizacionStatus.ABIERTA,
+                taller: {
+                    region: { in: tienda.cobertura },
+                },
+                categoria: {
+                    in: tienda.categorias.length > 0 ? tienda.categorias : undefined,
+                },
+                ofertas: {
+                    none: { tiendaId },
+                },
+                views: {
+                    none: { tiendaId },
+                },
+            },
+        });
+
+        return unreadCount;
     }
 }

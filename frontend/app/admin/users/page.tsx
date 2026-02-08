@@ -6,7 +6,7 @@ import { adminAPI } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Users, Loader2, ShieldAlert, CheckCircle2, XCircle, Eye } from 'lucide-react'
+import { ArrowLeft, Users, Loader2, ShieldAlert, CheckCircle2, XCircle, Eye, Trash2, Key } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -223,6 +223,26 @@ export default function AdminUsersPage() {
                                                         Ver Detalles
                                                     </Button>
                                                     <Button
+                                                        onClick={() => {
+                                                            setToggling(user.id)
+                                                            const password = prompt('Ingresa la nueva contraseña para este usuario:')
+                                                            if (password) {
+                                                                adminAPI.updateUserPassword(user.id, password)
+                                                                    .then(() => alert('Contraseña actualizada correctamente'))
+                                                                    .catch((err) => alert('Error al actualizar contraseña: ' + (err.response?.data?.message || err.message)))
+                                                                    .finally(() => setToggling(null))
+                                                            } else {
+                                                                setToggling(null)
+                                                            }
+                                                        }}
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="gap-2"
+                                                        title="Cambiar Contraseña"
+                                                    >
+                                                        <Key className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
                                                         onClick={() => handleToggleStatus(user.id)}
                                                         variant={user.isActive ? 'destructive' : 'default'}
                                                         size="sm"
@@ -245,6 +265,32 @@ export default function AdminUsersPage() {
                                                                 Activar
                                                             </>
                                                         )}
+                                                    </Button>
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (confirm('¿Estás seguro de eliminar este usuario? ESTA ACCIÓN NO SE PUEDE DESHACER. Se borrarán todos los datos asociados.')) {
+                                                                setToggling(user.id)
+                                                                try {
+                                                                    await adminAPI.deleteUser(user.id)
+                                                                    await loadUsers()
+                                                                } catch (error: any) {
+                                                                    alert(error.response?.data?.message || 'Error al eliminar usuario')
+                                                                } finally {
+                                                                    setToggling(null)
+                                                                }
+                                                            }
+                                                        }}
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        disabled={toggling === user.id || user.role === 'ADMIN'}
+                                                        className="gap-2"
+                                                    >
+                                                        {toggling === user.id ? (
+                                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="h-3 w-3" />
+                                                        )}
+                                                        Eliminar
                                                     </Button>
                                                 </div>
                                                 {user.role === 'ADMIN' && (

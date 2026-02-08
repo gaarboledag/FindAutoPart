@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarContent } from "@/components/Sidebar"
+import Link from "next/link"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 interface MobileSidebarProps {
@@ -23,7 +25,7 @@ export function MobileSidebar({ role }: MobileSidebarProps) {
     }
 
     return (
-        <div className="md:hidden flex items-center p-4 border-b bg-card">
+        <div className="md:hidden flex items-center justify-between p-4 border-b bg-card">
             <Button
                 variant="ghost"
                 size="icon"
@@ -33,6 +35,18 @@ export function MobileSidebar({ role }: MobileSidebarProps) {
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Abrir menú</span>
             </Button>
+
+            <Link href={role === "ADMIN" ? "/admin" : role === "TALLER" ? "/taller" : "/tienda"}>
+                <div className="relative w-32 h-8">
+                    <Image
+                        src="/logo_blanco.png"
+                        alt="FindPart Logo"
+                        fill
+                        className="object-contain object-right"
+                        priority
+                    />
+                </div>
+            </Link>
 
             {/* Overlay */}
             {isOpen && (

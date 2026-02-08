@@ -59,6 +59,13 @@ export default function EnviarOfertaPage() {
             const data = await cotizacionesAPI.getOne(id)
             setCotizacion(data)
 
+            // Mark as viewed
+            try {
+                await cotizacionesAPI.markAsViewed(id)
+            } catch (error) {
+                console.error('Error marking as viewed:', error)
+            }
+
             // Initialize offer items from quotation items
             const initialItems: OfferItem[] = data.items.map((item: any) => ({
                 nombre: item.nombre,

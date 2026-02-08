@@ -8,6 +8,8 @@ import {
     Delete,
     UseGuards,
     Query,
+    NotFoundException,
+    BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CotizacionesService } from './cotizaciones.service';
@@ -47,7 +49,7 @@ export class CotizacionesController {
         });
 
         if (!taller) {
-            throw new Error('Workshop profile not found');
+            throw new NotFoundException('Workshop profile not found');
         }
 
         return this.cotizacionesService.create(taller.id, dto);
@@ -81,7 +83,7 @@ export class CotizacionesController {
         });
 
         if (!tienda) {
-            throw new Error('Store profile not found');
+            throw new NotFoundException('Store profile not found');
         }
 
         return this.cotizacionesService.findAvailableForTienda(tienda.id);
@@ -107,7 +109,7 @@ export class CotizacionesController {
         });
 
         if (!taller) {
-            throw new Error('Workshop profile not found');
+            throw new NotFoundException('Workshop profile not found');
         }
 
         return this.cotizacionesService.update(id, taller.id, dto);
@@ -123,7 +125,7 @@ export class CotizacionesController {
         });
 
         if (!taller) {
-            throw new Error('Workshop profile not found');
+            throw new NotFoundException('Workshop profile not found');
         }
 
         return this.cotizacionesService.close(id, taller.id);
@@ -139,9 +141,42 @@ export class CotizacionesController {
         });
 
         if (!taller) {
-            throw new Error('Workshop profile not found');
+            throw new NotFoundException('Workshop profile not found');
         }
 
         return this.cotizacionesService.remove(id, taller.id);
+    }
+
+    @Get('tienda/unread-count')
+    @Roles(Role.TIENDA)
+    @ApiOperation({ summary: 'Get count of unviewed available quotations' })
+    async getUnreadCount(@CurrentUser() user: any) {
+        const tienda = await this.cotizacionesService['prisma'].tienda.findUnique({
+            where: { userId: user.userId },
+            select: { id: true },
+        });
+
+        if (!tienda) {
+            throw new NotFoundException('Store profile not found');
+        }
+
+        const count = await this.cotizacionesService.getUnreadCount(tienda.id);
+        return { count };
+    }
+
+    @Post(':id/view')
+    @Roles(Role.TIENDA)
+    @ApiOperation({ summary: 'Mark quotation as viewed' })
+    async markAsViewed(@Param('id') id: string, @CurrentUser() user: any) {
+        const tienda = await this.cotizacionesService['prisma'].tienda.findUnique({
+            where: { userId: user.userId },
+            select: { id: true },
+        });
+
+        if (!tienda) {
+            throw new NotFoundException('Store profile not found');
+        }
+
+        return this.cotizacionesService.markAsViewed(id, tienda.id);
     }
 }
