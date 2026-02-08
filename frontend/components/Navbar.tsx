@@ -28,9 +28,9 @@ export default function Navbar({ role }: NavbarProps) {
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur-md">
-            <div className="container flex h-16 items-center justify-between">
+            <div className="container flex h-14 md:h-16 items-center justify-between px-4">
                 <Link href={role === 'ADMIN' ? '/admin' : '/'} className="flex items-center gap-2">
-                    <div className="relative w-32 h-8">
+                    <div className="relative w-24 md:w-32 h-6 md:h-8">
                         <Image
                             src="/logo_blanco.png"
                             alt="FindPart Logo"
@@ -56,12 +56,14 @@ export default function Navbar({ role }: NavbarProps) {
                     ))}
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                     <Link href="/auth/login">
-                        <Button variant="ghost" size="sm">Iniciar Sesión</Button>
+                        <Button variant="ghost" size="sm" className="text-xs md:text-sm h-8 px-2 md:h-9 md:px-4">
+                            Ingresar
+                        </Button>
                     </Link>
                     <Link href="/auth/register">
-                        <Button variant="default" size="sm" className="shadow-[0_0_15px_rgba(11,31,59,0.5)]">
+                        <Button variant="default" size="sm" className="text-xs md:text-sm h-8 px-3 md:h-9 md:px-4 shadow-[0_0_15px_rgba(11,31,59,0.5)]">
                             Registrarse
                         </Button>
                     </Link>
