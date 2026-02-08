@@ -75,7 +75,7 @@ export function ChatWindow({ isOpen, onClose, cotizacionId, tiendaId, currentUse
 
                 newSocket.on('connect', () => {
                     console.log('Connected to chat server');
-                    newSocket.emit('joinChat', chat.id);
+                    newSocket?.emit('joinChat', chat.id);
                 });
 
                 newSocket.on('newMessage', (message: Message) => {
