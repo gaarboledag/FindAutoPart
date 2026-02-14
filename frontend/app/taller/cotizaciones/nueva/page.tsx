@@ -140,7 +140,7 @@ export default function NuevaCotizacionPage() {
                     Volver
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">Nueva Cotización</h1>
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Nueva Cotización</h1>
                     <p className="text-muted-foreground mt-1">Paso {step} de 3</p>
                 </div>
             </div>
@@ -148,7 +148,7 @@ export default function NuevaCotizacionPage() {
             {/* Progress Bar */}
             <div className="w-full bg-border/20 rounded-full h-2">
                 <div
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    className="bg-[#F97316] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${(step / 3) * 100}%` }}
                 />
             </div>
@@ -337,7 +337,7 @@ export default function NuevaCotizacionPage() {
                                     <Label>Imagen de Referencia</Label>
                                     <div className="flex items-center gap-4">
                                         {item.imagenUrl ? (
-                                            <div className="relative h-20 w-20 rounded-md overflow-hidden border bg-accent/5 group">
+                                            <div className="relative h-20 w-20 rounded-md overflow-hidden border bg-[#0F172A]/50 group">
                                                 <img
                                                     src={item.imagenUrl}
                                                     alt="Preview"
@@ -357,7 +357,7 @@ export default function NuevaCotizacionPage() {
                                         ) : (
                                             <div className={`
                                                 flex-1 border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center gap-2
-                                                hover:bg-accent/5 transition-colors cursor-pointer
+                                                hover:bg-[#0F172A]/50 transition-colors cursor-pointer
                                                 ${uploading[item.id] ? 'opacity-50 pointer-events-none' : ''}
                                             `}>
                                                 <div className="relative w-full text-center">
@@ -435,7 +435,7 @@ export default function NuevaCotizacionPage() {
                             <h3 className="font-semibold mb-3">Repuestos Solicitados ({items.filter(i => i.nombre.trim()).length})</h3>
                             <div className="space-y-2">
                                 {items.filter(item => item.nombre.trim()).map((item, index) => (
-                                    <div key={item.id} className="p-3 bg-accent/5 border rounded-lg text-sm flex gap-3">
+                                    <div key={item.id} className="p-3 bg-[#0F172A]/50 border rounded-lg text-sm flex gap-3">
                                         {item.imagenUrl && (
                                             <div className="h-16 w-16 flex-shrink-0 bg-white rounded border overflow-hidden">
                                                 <img src={item.imagenUrl} alt={item.nombre} className="h-full w-full object-contain" />

@@ -47,7 +47,7 @@ export default function AdminActivityPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -63,7 +63,7 @@ export default function AdminActivityPage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">
                         Actividad de la Plataforma
                     </h1>
                     <p className="text-muted-foreground mt-1">

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { SidebarContent } from "@/components/Sidebar"
 import Link from "next/link"
 import Image from "next/image"
@@ -25,19 +24,17 @@ export function MobileSidebar({ role }: MobileSidebarProps) {
     }
 
     return (
-        <div className="md:hidden flex items-center justify-between p-4 border-b bg-card">
-            <Button
-                variant="ghost"
-                size="icon"
+        <div className="md:hidden flex items-center justify-between p-3 border-b border-slate-700/50 bg-[#1E293B]">
+            <button
                 onClick={() => setIsOpen(true)}
-                className="text-muted-foreground hover:text-foreground"
+                className="flex items-center justify-center h-12 w-12 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#334155] transition-colors"
             >
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Abrir menú</span>
-            </Button>
+            </button>
 
             <Link href={role === "ADMIN" ? "/admin" : role === "TALLER" ? "/taller" : "/tienda"}>
-                <div className="relative w-32 h-8">
+                <div className="relative w-28 h-7">
                     <Image
                         src="/logo_blanco.png"
                         alt="FindPart Logo"
@@ -51,7 +48,7 @@ export function MobileSidebar({ role }: MobileSidebarProps) {
             {/* Overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm animate-in fade-in-0"
+                    className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm animate-in fade-in-0"
                     onClick={() => setIsOpen(false)}
                 />
             )}
@@ -59,20 +56,18 @@ export function MobileSidebar({ role }: MobileSidebarProps) {
             {/* Drawer */}
             <div
                 className={cn(
-                    "fixed top-0 bottom-0 left-0 z-50 w-[80%] max-w-sm bg-card border-r border-border shadow-2xl transition-transform duration-300 ease-in-out transform",
+                    "fixed top-0 bottom-0 left-0 z-50 w-[85%] max-w-sm bg-[#1E293B] border-r border-slate-700/50 shadow-2xl shadow-black/50 transition-transform duration-300 ease-in-out transform",
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 )}
             >
-                <div className="absolute right-4 top-4 z-50">
-                    <Button
-                        variant="ghost"
-                        size="icon"
+                <div className="absolute right-3 top-3 z-50">
+                    <button
                         onClick={() => setIsOpen(false)}
-                        className="text-muted-foreground hover:text-foreground rounded-full"
+                        className="flex items-center justify-center h-12 w-12 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#334155] transition-colors"
                     >
                         <X className="h-5 w-5" />
                         <span className="sr-only">Cerrar</span>
-                    </Button>
+                    </button>
                 </div>
 
                 <div className="h-full pt-2">

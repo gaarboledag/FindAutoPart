@@ -102,7 +102,7 @@ export default function PedidosTiendaPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -110,7 +110,7 @@ export default function PedidosTiendaPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-3xl font-bold font-heading text-primary-light">Mis Pedidos</h1>
+                <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Mis Pedidos</h1>
                 <p className="text-muted-foreground mt-1">
                     {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} recibido{pedidos.length !== 1 ? 's' : ''}
                 </p>
@@ -137,7 +137,7 @@ export default function PedidosTiendaPage() {
                         const isUpdating = updating === pedido.id
 
                         return (
-                            <Card key={pedido.id} className="hover:border-primary/50 transition-colors">
+                            <Card key={pedido.id} className="hover:border-[#F97316]/50 transition-colors">
                                 <CardHeader>
                                     <div className="flex items-start justify-between">
                                         <div className="space-y-1 flex-1">
@@ -153,7 +153,7 @@ export default function PedidosTiendaPage() {
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-2xl font-bold text-green-600">
+                                            <p className="text-2xl font-bold text-[#22C55E]">
                                                 ${pedido.total.toLocaleString('es-CO')}
                                             </p>
                                         </div>
@@ -245,7 +245,7 @@ export default function PedidosTiendaPage() {
                                                     <p className="text-xs mt-1">Confirmado</p>
                                                 </div>
                                                 <div className={`flex flex-col items-center ${pedido.status === 'ENTREGADO'
-                                                        ? 'text-green-600'
+                                                        ? 'text-[#22C55E]'
                                                         : 'text-muted-foreground'
                                                     }`}>
                                                     <div className={`rounded-full p-2 ${pedido.status === 'ENTREGADO'

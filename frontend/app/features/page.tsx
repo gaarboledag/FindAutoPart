@@ -29,8 +29,8 @@ export default function FeaturesPage() {
     return (
         <div className="container py-12 md:py-24 space-y-12">
             <div className="text-center space-y-4 max-w-3xl mx-auto">
-                <h1 className="text-4xl md:text-5xl font-bold font-heading">
-                    Todo lo que necesitas para tu <span className="text-primary-light">Taller</span>
+                <h1 className="text-4xl md:text-5xl font-bold font-sans">
+                    Todo lo que necesitas para tu <span className="text-[#F8FAFC]">Taller</span>
                 </h1>
                 <p className="text-xl text-muted-foreground">
                     FindPart centraliza la búsqueda de repuestos, gestión de pedidos y logística en una sola plataforma.
@@ -39,7 +39,7 @@ export default function FeaturesPage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {features.map((feature, i) => (
-                    <div key={i} className="bg-card p-6 rounded-xl border hover:border-primary/50 transition-colors">
+                    <div key={i} className="bg-card p-6 rounded-xl border hover:border-[#F97316]/50 transition-colors">
                         <div className="mb-4 bg-muted w-12 h-12 rounded-lg flex items-center justify-center">
                             {feature.icon}
                         </div>

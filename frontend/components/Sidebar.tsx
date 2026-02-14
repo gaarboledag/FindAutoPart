@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-// import { Button } from "@/components/ui/button" // Uncomment when moving logout button here if needed
 import {
     LayoutDashboard,
     FileText,
@@ -28,7 +27,6 @@ export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate
     const [unreadCount, setUnreadCount] = useState(0)
     const { user } = useAuthStore()
 
-    // Fetch unread count for TIENDA
     useEffect(() => {
         if (role === 'TIENDA' && user) {
             const fetchUnread = async () => {
@@ -41,12 +39,10 @@ export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate
             }
 
             fetchUnread()
-
-            // Poll every 30 seconds
             const interval = setInterval(fetchUnread, 30000)
             return () => clearInterval(interval)
         }
-    }, [role, user, pathname]) // Re-fetch on navigation too
+    }, [role, user, pathname])
 
     const links = {
         TALLER: [
@@ -57,7 +53,7 @@ export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate
         ],
         TIENDA: [
             { href: "/tienda", label: "Dashboard", icon: LayoutDashboard },
-            { href: "/tienda/cotizaciones", label: "Cotizaciones", icon: FileText, badge: unreadCount }, // Add badge here
+            { href: "/tienda/cotizaciones", label: "Cotizaciones", icon: FileText, badge: unreadCount },
             { href: "/tienda/ofertas", label: "Mis Ofertas", icon: Package },
             { href: "/tienda/pedidos", label: "Pedidos", icon: ShoppingBag },
             { href: "/tienda/configuracion", label: "Configuración", icon: Settings },
@@ -73,27 +69,25 @@ export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate
     const currentLinks = links[role] || []
 
     return (
-        <div className="flex flex-col h-full w-full bg-card">
-            <div className="p-6">
-                <div className="flex items-center gap-2 mb-2">
-                    <Link href={role === "ADMIN" ? "/admin" : role === "TALLER" ? "/taller" : "/tienda"} onClick={onNavigate}>
-                        <div className="relative w-40 h-10">
-                            <Image
-                                src="/logo_blanco.png"
-                                alt="FindPart Logo"
-                                fill
-                                className="object-contain object-left"
-                                priority
-                            />
-                        </div>
-                    </Link>
-                </div>
-                <p className="text-xs text-muted-foreground">
+        <div className="flex flex-col h-full w-full bg-[#1E293B]">
+            <div className="p-5 flex flex-col items-center">
+                <Link href={role === "ADMIN" ? "/admin" : role === "TALLER" ? "/taller" : "/tienda"} onClick={onNavigate} className="mb-2">
+                    <div className="relative w-36 h-9">
+                        <Image
+                            src="/logo_blanco.png"
+                            alt="FindPart Logo"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
+                </Link>
+                <p className="text-xs text-[#64748B] font-medium uppercase tracking-wider text-center">
                     {role === "TALLER" ? "Taller Automotriz" : role === "TIENDA" ? "Tienda de Repuestos" : "Administrador"}
                 </p>
             </div>
 
-            <nav className="flex-1 px-4 space-y-2">
+            <nav className="flex-1 px-3 space-y-1">
                 {currentLinks.map((link) => {
                     const Icon = link.icon
                     const isActive = pathname === link.href || pathname.startsWith(link.href + "/")
@@ -104,34 +98,34 @@ export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate
                             href={link.href}
                             onClick={onNavigate}
                             className={cn(
-                                "flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
+                                "flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 min-h-[48px]",
                                 isActive
-                                    ? "bg-primary/10 text-primary-light shadow-[0_0_10px_rgba(31,95,191,0.2)]"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                    ? "bg-orange-500/10 text-[#F97316] border-l-[3px] border-l-[#F97316] shadow-[0_0_10px_rgba(249,115,22,0.1)]"
+                                    : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#334155]/50"
                             )}
                         >
                             <div className="flex items-center gap-3">
-                                <Icon className={cn("h-4 w-4", isActive ? "text-primary-light" : "text-muted-foreground")} />
+                                <Icon className={cn("h-5 w-5", isActive ? "text-[#F97316]" : "text-[#64748B]")} />
                                 {link.label}
                             </div>
-                            {/* Display badge if present and > 0 */}
                             {(link as any).badge > 0 && (
-                                <span className="flex h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" />
+                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-[#F97316] text-white text-[10px] font-bold shadow-[0_0_8px_rgba(249,115,22,0.4)]">
+                                    {(link as any).badge}
+                                </span>
                             )}
                         </Link>
                     )
                 })}
             </nav>
 
-            <div className="p-4 border-t border-border/50">
+            <div className="p-3 border-t border-slate-700/50">
                 <button
-                    className="flex w-full items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-[#94A3B8] hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10 min-h-[48px]"
                     onClick={() => {
-                        // Handle logout
                         window.location.href = '/auth/login'
                     }}
                 >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="h-5 w-5" />
                     Cerrar Sesión
                 </button>
             </div>
@@ -141,7 +135,7 @@ export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate
 
 export function Sidebar({ role }: SidebarProps) {
     return (
-        <div className="hidden md:flex flex-col h-full w-64 border-r border-border/50 sticky top-0">
+        <div className="hidden md:flex flex-col h-full w-64 border-r border-slate-700/50 sticky top-0">
             <SidebarContent role={role} />
         </div>
     )

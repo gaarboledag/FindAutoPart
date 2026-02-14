@@ -69,7 +69,7 @@ export default function CotizacionesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -79,7 +79,7 @@ export default function CotizacionesPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">Mis Cotizaciones</h1>
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Mis Cotizaciones</h1>
                     <p className="text-muted-foreground mt-1">
                         {filteredCotizaciones.length} cotización{filteredCotizaciones.length !== 1 ? 'es' : ''}
                     </p>
@@ -153,7 +153,7 @@ export default function CotizacionesPage() {
             ) : (
                 <div className="grid gap-4">
                     {filteredCotizaciones.map((cotizacion) => (
-                        <Card key={cotizacion.id} className="hover:border-primary/50 transition-colors">
+                        <Card key={cotizacion.id} className="hover:border-[#F97316]/50 transition-colors">
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">

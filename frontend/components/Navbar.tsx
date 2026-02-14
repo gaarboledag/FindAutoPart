@@ -4,19 +4,19 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-// Removed './Navbar.css' import as we are moving to Tailwind
 import Image from "next/image"
+import { Menu, X } from "lucide-react"
+import { useState } from "react"
 
 interface NavbarProps {
-    role?: "TALLER" | "TIENDA" | "ADMIN" // Make role optional for public pages
+    role?: "TALLER" | "TIENDA" | "ADMIN"
 }
 
 export default function Navbar({ role }: NavbarProps) {
     const pathname = usePathname()
-    const isPublic = !role
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     if (role === 'TALLER' || role === 'TIENDA') {
-        // Taller and Tienda use Sidebar layout
         return null
     }
 
@@ -27,10 +27,10 @@ export default function Navbar({ role }: NavbarProps) {
     ]
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur-md">
-            <div className="container flex h-14 md:h-16 items-center justify-between px-4">
+        <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-700/50 bg-[#0F172A]/90 backdrop-blur-xl">
+            <div className="container flex h-16 items-center justify-between px-4">
                 <Link href={role === 'ADMIN' ? '/admin' : '/'} className="flex items-center gap-2">
-                    <div className="relative w-24 md:w-32 h-6 md:h-8">
+                    <div className="relative w-28 md:w-32 h-7 md:h-8">
                         <Image
                             src="/logo_blanco.png"
                             alt="FindPart Logo"
@@ -41,14 +41,15 @@ export default function Navbar({ role }: NavbarProps) {
                     </div>
                 </Link>
 
-                <div className="hidden md:flex items-center gap-6">
+                {/* Desktop Nav */}
+                <div className="hidden md:flex items-center gap-8">
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
                             className={cn(
-                                "text-sm font-medium transition-colors hover:text-primary-light",
-                                pathname === link.href ? "text-primary-light" : "text-muted-foreground"
+                                "text-sm font-medium transition-colors hover:text-[#F97316]",
+                                pathname === link.href ? "text-[#F97316]" : "text-[#94A3B8]"
                             )}
                         >
                             {link.label}
@@ -56,19 +57,57 @@ export default function Navbar({ role }: NavbarProps) {
                     ))}
                 </div>
 
-                <div className="flex items-center gap-2 md:gap-4">
-                    <Link href="/auth/login">
-                        <Button variant="ghost" size="sm" className="text-xs md:text-sm h-8 px-2 md:h-9 md:px-4">
+                <div className="flex items-center gap-3">
+                    <Link href="/auth/login" className="hidden md:block">
+                        <Button variant="ghost" size="sm" className="text-sm text-[#94A3B8] hover:text-[#F8FAFC]">
                             Ingresar
                         </Button>
                     </Link>
                     <Link href="/auth/register">
-                        <Button variant="default" size="sm" className="text-xs md:text-sm h-8 px-3 md:h-9 md:px-4 shadow-[0_0_15px_rgba(11,31,59,0.5)]">
+                        <Button variant="cta" size="sm" className="text-sm">
                             Registrarse
                         </Button>
                     </Link>
+
+                    {/* Mobile Menu Toggle */}
+                    <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="md:hidden flex items-center justify-center h-12 w-12 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+                    >
+                        {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                    </button>
                 </div>
             </div>
+
+            {/* Mobile Menu */}
+            {mobileMenuOpen && (
+                <div className="md:hidden border-t border-slate-700/50 bg-[#1E293B] animate-in slide-in-from-top-2 duration-200">
+                    <div className="container px-4 py-4 space-y-2">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                    "block py-3 px-4 rounded-lg text-base font-medium transition-colors min-h-[48px] flex items-center",
+                                    pathname === link.href
+                                        ? "text-[#F97316] bg-orange-500/10"
+                                        : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#334155]"
+                                )}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
+                        <Link
+                            href="/auth/login"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block py-3 px-4 rounded-lg text-base font-medium text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#334155] transition-colors min-h-[48px] flex items-center"
+                        >
+                            Ingresar
+                        </Link>
+                    </div>
+                </div>
+            )}
         </nav>
     )
 }

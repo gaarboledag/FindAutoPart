@@ -90,7 +90,7 @@ export default function MisOfertasPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -100,7 +100,7 @@ export default function MisOfertasPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">Mis Ofertas</h1>
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Mis Ofertas</h1>
                     <p className="text-muted-foreground mt-1">
                         {filteredOfertas.length} oferta{filteredOfertas.length !== 1 ? 's' : ''}
                     </p>
@@ -184,7 +184,7 @@ export default function MisOfertasPage() {
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-2xl font-bold text-green-600">
+                                            <p className="text-2xl font-bold text-[#22C55E]">
                                                 ${calculateTotal(oferta).toLocaleString('es-CO')}
                                             </p>
                                         </div>
@@ -217,7 +217,7 @@ export default function MisOfertasPage() {
                                         <p className="text-sm font-medium mb-2">Items de la Oferta:</p>
                                         <div className="space-y-1">
                                             {oferta.items.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-sm p-2 bg-accent/5 rounded">
+                                                <div key={idx} className="flex justify-between text-sm p-2 bg-[#0F172A]/50 rounded">
                                                     <div className="flex items-center gap-2">
                                                         <span>{item.nombre}</span>
                                                         {!item.disponible && (

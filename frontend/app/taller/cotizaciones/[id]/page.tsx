@@ -199,7 +199,7 @@ export default function CotizacionDetailPage() {
                 </Link>
                 <div className="flex-1">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold font-heading text-primary-light">{cotizacion.titulo}</h1>
+                        <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">{cotizacion.titulo}</h1>
                         <Badge variant={cotizacion.status === 'ABIERTA' ? 'default' : 'secondary'}>
                             {cotizacion.status}
                         </Badge>
@@ -250,7 +250,7 @@ export default function CotizacionDetailPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {cotizacion.items?.map((item: any, index: number) => (
-                            <div key={item.id} className="p-4 bg-accent/5 border rounded-lg text-sm">
+                            <div key={item.id} className="p-4 bg-[#0F172A]/50 border rounded-lg text-sm">
                                 <div className="flex flex-col md:flex-row gap-4 items-start">
                                     {item.imagenUrl && (
                                         <div
@@ -280,7 +280,7 @@ export default function CotizacionDetailPage() {
             {/* Chats Section - NEW */}
             {chatsWithoutOffer.length > 0 && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    <h2 className="text-2xl font-bold font-heading mb-4">Mensajes de Tiendas (Sin Oferta)</h2>
+                    <h2 className="text-2xl font-bold font-sans mb-4">Mensajes de Tiendas (Sin Oferta)</h2>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {chatsWithoutOffer.map((chat) => {
                             const unreadMessages = chat.unreadCount || 0;
@@ -318,7 +318,7 @@ export default function CotizacionDetailPage() {
             {/* Ofertas Section */}
             <div>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold font-heading">Ofertas Recibidas</h2>
+                    <h2 className="text-2xl font-bold font-sans">Ofertas Recibidas</h2>
                     {ofertas.length > 0 && (
                         <Badge variant="info" className="gap-2">
                             <TrendingUp className="h-3 w-3" />
@@ -369,9 +369,9 @@ export default function CotizacionDetailPage() {
                                                     size="sm"
                                                     onClick={() => openChat(oferta.tienda.id, oferta.tienda.nombre)}
                                                     title="Chatear con la tienda"
-                                                    className="relative gap-2 border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                                                    className="relative gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400"
                                                 >
-                                                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                                                    <MessageSquare className="h-4 w-4 text-blue-400" />
                                                     Chatear
                                                     {unreadMessages > 0 && (
                                                         <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -398,7 +398,7 @@ export default function CotizacionDetailPage() {
                                         <div className="grid gap-4 md:grid-cols-4 mb-4">
                                             <div>
                                                 <p className="text-xs text-muted-foreground">Total</p>
-                                                <p className="text-2xl font-bold text-green-600">
+                                                <p className="text-2xl font-bold text-[#22C55E]">
                                                     ${calculateTotal(oferta).toLocaleString('es-CO')}
                                                 </p>
                                             </div>
@@ -420,7 +420,7 @@ export default function CotizacionDetailPage() {
                                         <div className="space-y-2">
                                             <p className="text-sm font-medium">Detalle de Precios:</p>
                                             {oferta.items.map((item: any, idx: number) => (
-                                                <div key={idx} className="flex justify-between items-center text-sm p-2 bg-accent/5 rounded">
+                                                <div key={idx} className="flex justify-between items-center text-sm p-2 bg-[#0F172A]/50 rounded">
                                                     <div className="flex items-center gap-2">
                                                         <span>{item.nombre}</span>
                                                         {!item.disponible && (

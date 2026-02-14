@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
     if (loading || !data) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
                 </Link>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary-light via-secondary to-accent bg-clip-text text-transparent">
+                        <h1 className="text-3xl font-sans font-bold bg-gradient-to-r from-primary-light via-secondary to-accent bg-clip-text text-transparent">
                             Analytics Dashboard
                         </h1>
                         <p className="text-muted-foreground mt-1">
@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
 
             {/* Global KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <Card className="hover:border-primary/50 transition-all">
+                <Card className="hover:border-[#F97316]/50 transition-all">
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-4">
                             <Users className="h-8 w-8 text-primary" />
@@ -221,7 +221,7 @@ export default function AnalyticsPage() {
             {/* Trends Chart */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-primary-light flex items-center gap-2">
+                    <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                         <TrendingUp className="h-5 w-5" />
                         Tendencias en el Período
                     </CardTitle>
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
             {/* Revenue Chart */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-primary-light flex items-center gap-2">
+                    <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                         <DollarSign className="h-5 w-5" />
                         Revenue por Día
                     </CardTitle>
@@ -314,7 +314,7 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-primary-light flex items-center gap-2">
+                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                             <Users className="h-5 w-5" />
                             Distribución de Usuarios
                         </CardTitle>
@@ -350,7 +350,7 @@ export default function AnalyticsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-primary-light flex items-center gap-2">
+                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                             <Package className="h-5 w-5" />
                             Pedidos por Estado
                         </CardTitle>
@@ -387,7 +387,7 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-primary-light flex items-center gap-2">
+                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                             🏆 Top 5 Talleres
                         </CardTitle>
                     </CardHeader>
@@ -416,7 +416,7 @@ export default function AnalyticsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-primary-light flex items-center gap-2">
+                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                             🏆 Top 5 Tiendas
                         </CardTitle>
                     </CardHeader>

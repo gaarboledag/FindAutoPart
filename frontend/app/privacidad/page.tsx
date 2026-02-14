@@ -6,14 +6,14 @@ import { FileText, Lock, Shield, Eye } from 'lucide-react'
 
 export default function PrivacyPage() {
     return (
-        <div className="min-h-screen bg-[#0B0F19] text-foreground selection:bg-primary/30 selection:text-primary-light">
+        <div className="min-h-screen bg-[#0F172A] text-foreground selection:bg-primary/30 selection:text-[#F8FAFC]">
             <Navbar />
 
             <main className="container mx-auto px-4 pt-32 pb-20">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-12">
-                        <Badge variant="outline" className="mb-4 text-primary-light border-primary/20">Legal</Badge>
-                        <h1 className="text-4xl md:text-5xl font-bold font-heading mb-6">Política de Privacidad y Tratamiento de Datos</h1>
+                        <Badge variant="outline" className="mb-4 text-[#F8FAFC] border-primary/20">Legal</Badge>
+                        <h1 className="text-4xl md:text-5xl font-bold font-sans mb-6">Política de Privacidad y Tratamiento de Datos</h1>
                         <p className="text-xl text-muted-foreground">
                             Cumplimiento normativo Ley 1581 de 2012 (Habeas Data) y Decreto 1377 de 2013.
                         </p>

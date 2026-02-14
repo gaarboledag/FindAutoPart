@@ -58,7 +58,7 @@ export default function UserDetailPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen bg-[#0B0F19]">
+            <div className="flex items-center justify-center h-screen bg-[#0F172A]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         )
@@ -67,7 +67,7 @@ export default function UserDetailPage() {
     if (!data) {
         return (
             <ProtectedRoute allowedRoles={['ADMIN']}>
-                <div className="min-h-screen bg-[#0B0F19]">
+                <div className="min-h-screen bg-[#0F172A]">
                     <Navbar role="ADMIN" />
                     <div className="container mx-auto px-4 py-8">
                         <p className="text-white">Usuario no encontrado</p>
@@ -82,7 +82,7 @@ export default function UserDetailPage() {
 
     return (
         <ProtectedRoute allowedRoles={['ADMIN']}>
-            <div className="min-h-screen bg-[#0B0F19]">
+            <div className="min-h-screen bg-[#0F172A]">
                 <Navbar role="ADMIN" />
 
                 <main className="container mx-auto px-4 py-8">
@@ -99,7 +99,7 @@ export default function UserDetailPage() {
 
                         <div className="flex items-center justify-between">
                             <div>
-                                <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary-light via-secondary to-accent bg-clip-text text-transparent">
+                                <h1 className="text-3xl font-sans font-bold bg-gradient-to-r from-primary-light via-secondary to-accent bg-clip-text text-transparent">
                                     {isTaller ? profile.taller?.nombre : profile.tienda?.nombre}
                                 </h1>
                                 <p className="text-muted-foreground mt-1">{profile.email}</p>
@@ -113,7 +113,7 @@ export default function UserDetailPage() {
                     {/* Profile Info Card */}
                     <Card className="mb-8 bg-white/5 backdrop-blur-sm border-white/10">
                         <CardHeader>
-                            <CardTitle className="text-primary-light">Datos del Perfil</CardTitle>
+                            <CardTitle className="text-[#F8FAFC]">Datos del Perfil</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                             <div>
@@ -158,11 +158,11 @@ export default function UserDetailPage() {
                     {/* Metrics Grid - Taller */}
                     {isTaller && metrics.cotizaciones && (
                         <>
-                            <h2 className="text-2xl font-heading font-bold text-white mb-4">
+                            <h2 className="text-2xl font-sans font-bold text-white mb-4">
                                 Métricas de Uso
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                                <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:border-primary/50 transition-all">
+                                <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:border-[#F97316]/50 transition-all">
                                     <CardContent className="p-6">
                                         <div className="flex items-center justify-between mb-4">
                                             <FileText className="h-10 w-10 text-blue-400" />
@@ -259,7 +259,7 @@ export default function UserDetailPage() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                                 <Card className="bg-white/5 backdrop-blur-sm border-white/10">
                                     <CardHeader>
-                                        <CardTitle className="text-primary-light flex items-center gap-2">
+                                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                                             <Calendar className="h-5 w-5" />
                                             Actividad Reciente
                                         </CardTitle>
@@ -286,7 +286,7 @@ export default function UserDetailPage() {
 
                                 <Card className="bg-white/5 backdrop-blur-sm border-white/10">
                                     <CardHeader>
-                                        <CardTitle className="text-primary-light flex items-center gap-2">
+                                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                                             <Store className="h-5 w-5" />
                                             Tiendas Favoritas
                                         </CardTitle>
@@ -313,7 +313,7 @@ export default function UserDetailPage() {
                     {/* Metrics Grid - Tienda */}
                     {!isTaller && metrics.ofertas && (
                         <>
-                            <h2 className="text-2xl font-heading font-bold text-white mb-4">
+                            <h2 className="text-2xl font-sans font-bold text-white mb-4">
                                 Métricas de Rendimiento
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -414,7 +414,7 @@ export default function UserDetailPage() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                                 <Card className="bg-white/5 backdrop-blur-sm border-white/10">
                                     <CardHeader>
-                                        <CardTitle className="text-primary-light flex items-center gap-2">
+                                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                                             <Calendar className="h-5 w-5" />
                                             Actividad Reciente
                                         </CardTitle>
@@ -441,7 +441,7 @@ export default function UserDetailPage() {
 
                                 <Card className="bg-white/5 backdrop-blur-sm border-white/10">
                                     <CardHeader>
-                                        <CardTitle className="text-primary-light flex items-center gap-2">
+                                        <CardTitle className="text-[#F8FAFC] flex items-center gap-2">
                                             <Users className="h-5 w-5" />
                                             Clientes Frecuentes
                                         </CardTitle>
@@ -469,7 +469,7 @@ export default function UserDetailPage() {
                     {data.history && data.history.length > 0 && (
                         <Card className="bg-white/5 backdrop-blur-sm border-white/10">
                             <CardHeader>
-                                <CardTitle className="text-primary-light">
+                                <CardTitle className="text-[#F8FAFC]">
                                     Historial de Pedidos (Últimos 10)
                                 </CardTitle>
                             </CardHeader>

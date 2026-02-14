@@ -52,7 +52,7 @@ export default function CotizacionesDisponiblesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -60,7 +60,7 @@ export default function CotizacionesDisponiblesPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-3xl font-bold font-heading text-primary-light">Cotizaciones Disponibles</h1>
+                <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Cotizaciones Disponibles</h1>
                 <p className="text-muted-foreground mt-1">
                     {cotizaciones.length} cotización{cotizaciones.length !== 1 ? 'es' : ''} en tu área de cobertura
                 </p>
@@ -89,7 +89,7 @@ export default function CotizacionesDisponiblesPage() {
             ) : (
                 <div className="grid gap-4">
                     {cotizaciones.map((cotizacion) => (
-                        <Card key={cotizacion.id} className={`hover:border-primary/50 transition-colors ${!cotizacion.isViewed ? 'border-l-4 border-l-blue-500 bg-blue-50/10' : ''}`}>
+                        <Card key={cotizacion.id} className={`hover:border-[#F97316]/50 transition-colors ${!cotizacion.isViewed ? 'border-l-4 border-l-blue-500 bg-blue-50/10' : ''}`}>
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1 flex-1">

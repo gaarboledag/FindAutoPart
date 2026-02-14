@@ -292,7 +292,7 @@ export default function TiendaSetupPage() {
                                                 cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 relative group
                                                 ${isSelected
                                                     ? 'border-secondary bg-secondary/10 shadow-[0_0_10px_rgba(0,194,255,0.2)]'
-                                                    : 'border-border bg-card hover:border-primary/50 hover:bg-muted/50'}
+                                                    : 'border-border bg-card hover:border-[#F97316]/50 hover:bg-muted/50'}
                                             `}
                                         >
                                             <div className="flex items-start justify-between">

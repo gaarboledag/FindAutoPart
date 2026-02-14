@@ -191,7 +191,7 @@ export default function EnviarOfertaPage() {
                 <div className="flex-1">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold font-heading text-primary-light">Enviar Oferta</h1>
+                            <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Enviar Oferta</h1>
                             <p className="text-muted-foreground mt-1">{cotizacion.titulo}</p>
                         </div>
                         <Button
@@ -199,7 +199,7 @@ export default function EnviarOfertaPage() {
                             onClick={() => setIsChatOpen(true)}
                             className="gap-2"
                         >
-                            <MessageSquare className="h-4 w-4 text-blue-600" />
+                            <MessageSquare className="h-4 w-4 text-blue-400" />
                             Chat con Taller
                         </Button>
                     </div>
@@ -290,7 +290,7 @@ export default function EnviarOfertaPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Subtotal</Label>
-                                            <div className="h-10 flex items-center px-3 bg-accent/5 border rounded text-sm font-medium">
+                                            <div className="h-10 flex items-center px-3 bg-[#0F172A]/50 border rounded text-sm font-medium">
                                                 ${(item.precioUnitario * item.cantidad).toLocaleString('es-CO')}
                                             </div>
                                         </div>
@@ -311,7 +311,7 @@ export default function EnviarOfertaPage() {
                                     cursor-pointer border rounded-lg p-4 flex items-center gap-4 transition-all
                                     ${deliveryMode === 'immediate'
                                         ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                        : 'border-border hover:border-primary/50'}
+                                        : 'border-border hover:border-[#F97316]/50'}
                                 `}
                             >
                                 <div className={`p-2 rounded-full ${deliveryMode === 'immediate' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
@@ -330,7 +330,7 @@ export default function EnviarOfertaPage() {
                                     cursor-pointer border rounded-lg p-4 flex items-center gap-4 transition-all
                                     ${deliveryMode === 'custom'
                                         ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                        : 'border-border hover:border-primary/50'}
+                                        : 'border-border hover:border-[#F97316]/50'}
                                 `}
                             >
                                 <div className={`p-2 rounded-full ${deliveryMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
@@ -362,7 +362,7 @@ export default function EnviarOfertaPage() {
                     <div className="space-y-2">
                         <Label>Total de la Oferta</Label>
                         <div className="h-12 flex items-center px-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                            <p className="text-2xl font-bold text-green-600">
+                            <p className="text-2xl font-bold text-[#22C55E]">
                                 ${(total).toLocaleString('es-CO')}
                             </p>
                         </div>

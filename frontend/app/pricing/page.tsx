@@ -37,8 +37,8 @@ export default function PricingPage() {
     return (
         <div className="container py-12 md:py-24 space-y-12">
             <div className="text-center space-y-4 max-w-3xl mx-auto">
-                <h1 className="text-4xl md:text-5xl font-bold font-heading">
-                    Planes Simples y <span className="text-primary-light">Transparentes</span>
+                <h1 className="text-4xl md:text-5xl font-bold font-sans">
+                    Planes Simples y <span className="text-[#F8FAFC]">Transparentes</span>
                 </h1>
                 <p className="text-xl text-muted-foreground">
                     Sin costos ocultos. Crecemos solo cuando tú creces.
@@ -55,7 +55,7 @@ export default function PricingPage() {
                         )}
                         <div className="text-center mb-8">
                             <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                            <div className="text-4xl font-bold text-primary-light mb-2">{plan.price}</div>
+                            <div className="text-4xl font-bold text-[#F8FAFC] mb-2">{plan.price}</div>
                             <p className="text-muted-foreground">{plan.description}</p>
                         </div>
                         <ul className="space-y-4 mb-8">

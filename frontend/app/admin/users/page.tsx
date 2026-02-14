@@ -64,7 +64,7 @@ export default function AdminUsersPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">
                         Gestión de Usuarios
                     </h1>
                     <p className="text-muted-foreground mt-1">

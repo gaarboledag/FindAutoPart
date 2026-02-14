@@ -10,13 +10,13 @@ import { MessageCircle, Mail, Phone, HelpCircle, Send } from 'lucide-react'
 
 export default function SupportPage() {
     return (
-        <div className="min-h-screen bg-[#0B0F19] text-foreground selection:bg-primary/30 selection:text-primary-light">
+        <div className="min-h-screen bg-[#0F172A] text-foreground selection:bg-primary/30 selection:text-[#F8FAFC]">
             <Navbar />
 
             <main className="container mx-auto px-4 pt-32 pb-20">
                 <div className="text-center mb-12">
                     <Badge variant="outline" className="mb-4 text-secondary border-secondary/20">Centro de Ayuda</Badge>
-                    <h1 className="text-4xl md:text-5xl font-bold font-heading mb-6">¿Cómo podemos ayudarte?</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-sans mb-6">¿Cómo podemos ayudarte?</h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Estamos aquí para resolver tus dudas y asegurar que tu operación no se detenga.
                     </p>
@@ -56,7 +56,7 @@ export default function SupportPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white/5 border-white/10 hover:border-primary/50 transition-colors cursor-pointer group">
+                    <Card className="bg-white/5 border-white/10 hover:border-[#F97316]/50 transition-colors cursor-pointer group">
                         <CardHeader className="text-center">
                             <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <Mail className="h-6 w-6 text-primary" />
@@ -78,7 +78,7 @@ export default function SupportPage() {
                     <div>
                         <div className="flex items-center gap-3 mb-6">
                             <HelpCircle className="h-6 w-6 text-secondary" />
-                            <h2 className="text-2xl font-bold font-heading">Preguntas Frecuentes</h2>
+                            <h2 className="text-2xl font-bold font-sans">Preguntas Frecuentes</h2>
                         </div>
 
                         <Accordion type="single" collapsible className="w-full">

@@ -23,18 +23,23 @@ const config: Config = {
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
                 primary: {
-                    DEFAULT: "#0B1F3B", // Deep Tech Blue
-                    light: "#1F5FBF",
-                    dark: "#050F1D",
-                    foreground: "#ffffff",
+                    DEFAULT: "#0F172A", // Azul Noche Profundo
+                    light: "#F97316",   // Naranja Mecánico (accent/CTA)
+                    dark: "#020617",
+                    foreground: "#F8FAFC",
                 },
                 secondary: {
-                    DEFAULT: "#00C2FF", // Electric Cyan
-                    foreground: "#000000",
+                    DEFAULT: "#F97316", // Naranja Mecánico / Torque
+                    foreground: "#FFFFFF",
                 },
                 accent: {
-                    DEFAULT: "#16A34A", // Success Green
-                    foreground: "#ffffff",
+                    DEFAULT: "#22C55E", // Success Green
+                    foreground: "#FFFFFF",
+                },
+                surface: {
+                    DEFAULT: "#1E293B", // Azul Pizarra
+                    light: "#334155",
+                    dark: "#0F172A",
                 },
                 destructive: {
                     DEFAULT: "hsl(var(--destructive))",
@@ -52,15 +57,25 @@ const config: Config = {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
+                cta: {
+                    DEFAULT: "#F97316",
+                    hover: "#FB923C",
+                    dark: "#EA580C",
+                },
+                steel: {
+                    DEFAULT: "#94A3B8",
+                    light: "#CBD5E1",
+                    dark: "#64748B",
+                },
             },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
+                lg: "8px",
+                md: "6px",
+                sm: "4px",
             },
             fontFamily: {
                 sans: ["var(--font-inter)", "sans-serif"],
-                heading: ["var(--font-space-grotesk)", "sans-serif"],
+                heading: ["var(--font-inter)", "sans-serif"],
                 mono: ["var(--font-jetbrains-mono)", "monospace"],
             },
             keyframes: {
@@ -72,10 +87,15 @@ const config: Config = {
                     from: { height: "var(--radix-accordion-content-height)" },
                     to: { height: "0" },
                 },
+                "pulse-glow": {
+                    "0%, 100%": { boxShadow: "0 0 15px rgba(249,115,22,0.4)" },
+                    "50%": { boxShadow: "0 0 25px rgba(249,115,22,0.6)" },
+                },
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
+                "pulse-glow": "pulse-glow 2s ease-in-out infinite",
             },
         },
     },

@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F97316]"></div>
             </div>
         )
     }
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold font-heading text-primary-light">
+                <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">
                     Panel de Administración
                 </h1>
                 <p className="text-muted-foreground mt-1">
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
                     {/* Platform Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Users Card */}
-                        <Card className="hover:border-primary/50 transition-all duration-300">
+                        <Card className="hover:border-[#F97316]/50 transition-all duration-300">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Usuarios
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
                                 <Users className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-primary-light">{stats.users.total}</div>
+                                <div className="text-2xl font-bold text-[#F8FAFC]">{stats.users.total}</div>
                                 <div className="text-xs text-muted-foreground mt-1">
                                     <Badge variant="success" className="text-[10px] px-1 py-0 h-4">
                                         {stats.users.active} activos
@@ -109,10 +109,10 @@ export default function AdminDashboard() {
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Repuestos
                                 </CardTitle>
-                                <Package className="h-4 w-4 text-primary-light" />
+                                <Package className="h-4 w-4 text-[#F8FAFC]" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-primary-light">{stats.repuestos.total}</div>
+                                <div className="text-2xl font-bold text-[#F8FAFC]">{stats.repuestos.total}</div>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     En catálogo
                                 </p>
@@ -190,13 +190,13 @@ export default function AdminDashboard() {
 
                     {/* Quick Actions */}
                     <div>
-                        <h2 className="text-xl font-semibold font-heading tracking-tight mb-4">
+                        <h2 className="text-xl font-semibold font-sans tracking-tight mb-4">
                             Gestión Rápida
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Users Management */}
                             <Link href="/admin/users">
-                                <Card className="hover:border-primary/50 cursor-pointer h-full group transition-all duration-300">
+                                <Card className="hover:border-[#F97316]/50 cursor-pointer h-full group transition-all duration-300">
                                     <CardHeader>
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">

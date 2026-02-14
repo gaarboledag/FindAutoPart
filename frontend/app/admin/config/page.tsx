@@ -20,7 +20,7 @@ export default function AdminConfigPage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-bold font-heading text-primary-light">
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">
                         Configuración del Sistema
                     </h1>
                     <p className="text-muted-foreground mt-1">
