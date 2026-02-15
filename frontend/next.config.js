@@ -1,11 +1,18 @@
 /** @type {import('next').NextConfig} */
+
+// Extract origin (protocol + domain) from API URL for CSP
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const apiOrigin = (() => {
+    try { return new URL(apiUrl).origin; } catch { return ''; }
+})();
+
 const nextConfig = {
     reactStrictMode: true,
     poweredByHeader: false,
     compress: true,
     output: 'standalone',
     env: {
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
+        NEXT_PUBLIC_API_URL: apiUrl,
     },
     images: {
         remotePatterns: [
@@ -33,7 +40,7 @@ const nextConfig = {
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "img-src 'self' data: blob: https:",
                             "font-src 'self' https://fonts.gstatic.com",
-                            `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || ''} wss: ws:`,
+                            `connect-src 'self' ${apiOrigin} wss: ws:`,
                             "frame-src 'none'",
                             "object-src 'none'",
                         ].join('; '),
