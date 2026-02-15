@@ -68,7 +68,7 @@ export function ChatWindow({ isOpen, onClose, cotizacionId, tiendaId, currentUse
                     currentChatId = chat.id;
                 }
 
-                setChatId(currentChatId);
+                setChatId(currentChatId || null);
                 joinChat(currentChatId!);
                 setActiveChatId(currentChatId);
 
