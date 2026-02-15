@@ -13,14 +13,14 @@ export class AuthController {
     constructor(private authService: AuthService) { }
 
     @Post('register')
-    @Throttle({ short: { limit: 1, ttl: 1000 }, long: { limit: 5, ttl: 3600000 } })
+    @Throttle({ short: { limit: 3, ttl: 10000 }, long: { limit: 20, ttl: 3600000 } })
     @ApiOperation({ summary: 'Register a new user' })
     async register(@Body() dto: RegisterDto) {
         return this.authService.register(dto);
     }
 
     @Post('login')
-    @Throttle({ short: { limit: 1, ttl: 1000 }, long: { limit: 10, ttl: 900000 } })
+    @Throttle({ short: { limit: 5, ttl: 10000 }, long: { limit: 20, ttl: 900000 } })
     @ApiOperation({ summary: 'Login with email and password' })
     async login(@Body() dto: LoginDto) {
         return this.authService.login(dto);
