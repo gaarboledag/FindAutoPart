@@ -9,7 +9,8 @@ import {
     UseGuards,
     Query,
     NotFoundException,
-    BadRequestException,
+    ForbiddenException,
+    Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CotizacionesService } from './cotizaciones.service';
@@ -27,6 +28,8 @@ import { StorageService } from '../common/services/storage.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class CotizacionesController {
+    private readonly logger = new Logger(CotizacionesController.name);
+
     constructor(
         private readonly cotizacionesService: CotizacionesService,
         private readonly storageService: StorageService
@@ -43,25 +46,16 @@ export class CotizacionesController {
     @Roles(Role.TALLER)
     @ApiOperation({ summary: 'Create a new quotation' })
     async create(@CurrentUser() user: any, @Body() dto: CreateCotizacionDto) {
-        try {
-            console.log('Creating quotation for user:', user.userId);
-            console.log('DTO:', JSON.stringify(dto));
+        const taller = await this.cotizacionesService['prisma'].taller.findUnique({
+            where: { userId: user.userId },
+            select: { id: true },
+        });
 
-            const taller = await this.cotizacionesService['prisma'].taller.findUnique({
-                where: { userId: user.userId },
-                select: { id: true },
-            });
-
-            if (!taller) {
-                console.error('Workshop profile not found for user:', user.userId);
-                throw new NotFoundException('Workshop profile not found');
-            }
-
-            return await this.cotizacionesService.create(taller.id, dto);
-        } catch (error) {
-            console.error('Error creating quotation:', error);
-            throw error;
+        if (!taller) {
+            throw new NotFoundException('Workshop profile not found');
         }
+
+        return await this.cotizacionesService.create(taller.id, dto);
     }
 
     @Get()
@@ -98,10 +92,65 @@ export class CotizacionesController {
         return this.cotizacionesService.findAvailableForTienda(tienda.id);
     }
 
+    @Get('tienda/unread-count')
+    @Roles(Role.TIENDA)
+    @ApiOperation({ summary: 'Get count of unviewed available quotations' })
+    async getUnreadCount(@CurrentUser() user: any) {
+        const tienda = await this.cotizacionesService['prisma'].tienda.findUnique({
+            where: { userId: user.userId },
+            select: { id: true },
+        });
+
+        if (!tienda) {
+            throw new NotFoundException('Store profile not found');
+        }
+
+        const count = await this.cotizacionesService.getUnreadCount(tienda.id);
+        return { count };
+    }
+
     @Get(':id')
+    @Roles(Role.TALLER, Role.TIENDA, Role.ADMIN)
     @ApiOperation({ summary: 'Get quotation by ID' })
-    findOne(@Param('id') id: string) {
-        return this.cotizacionesService.findOne(id);
+    async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+        const cotizacion = await this.cotizacionesService.findOne(id);
+
+        if (!cotizacion) {
+            throw new NotFoundException('Quotation not found');
+        }
+
+        // Access control: verify ownership or authorized access
+        if (user.role === Role.TALLER) {
+            const taller = await this.cotizacionesService['prisma'].taller.findUnique({
+                where: { userId: user.userId },
+                select: { id: true },
+            });
+            if (cotizacion.tallerId !== taller?.id) {
+                throw new ForbiddenException('Access denied');
+            }
+        }
+
+        // Stores can only view open quotations
+        if (user.role === Role.TIENDA && cotizacion.status !== 'ABIERTA') {
+            // Allow access if tienda has an existing offer on this quotation
+            const tienda = await this.cotizacionesService['prisma'].tienda.findUnique({
+                where: { userId: user.userId },
+                select: { id: true },
+            });
+            const hasOffer = await this.cotizacionesService['prisma'].oferta.findUnique({
+                where: {
+                    cotizacionId_tiendaId: {
+                        cotizacionId: id,
+                        tiendaId: tienda?.id || '',
+                    },
+                },
+            });
+            if (!hasOffer) {
+                throw new ForbiddenException('This quotation is no longer available');
+            }
+        }
+
+        return cotizacion;
     }
 
     @Patch(':id')
@@ -154,23 +203,6 @@ export class CotizacionesController {
         }
 
         return this.cotizacionesService.remove(id, taller.id);
-    }
-
-    @Get('tienda/unread-count')
-    @Roles(Role.TIENDA)
-    @ApiOperation({ summary: 'Get count of unviewed available quotations' })
-    async getUnreadCount(@CurrentUser() user: any) {
-        const tienda = await this.cotizacionesService['prisma'].tienda.findUnique({
-            where: { userId: user.userId },
-            select: { id: true },
-        });
-
-        if (!tienda) {
-            throw new NotFoundException('Store profile not found');
-        }
-
-        const count = await this.cotizacionesService.getUnreadCount(tienda.id);
-        return { count };
     }
 
     @Post(':id/view')

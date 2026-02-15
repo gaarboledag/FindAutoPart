@@ -1,58 +1,50 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatsGateway } from './chats.gateway';
 import { Role } from '@prisma/client';
 
 @Injectable()
 export class ChatsService {
+    private readonly logger = new Logger(ChatsService.name);
+
     constructor(
         private prisma: PrismaService,
         private chatsGateway: ChatsGateway
     ) { }
 
     async initChat(cotizacionId: string, tiendaId: string) {
-        try {
-            console.log(`Initializing chat for cotizacion ${cotizacionId} and tienda ${tiendaId}`);
-            // Check if chat exists
-            let chat = await this.prisma.chat.findUnique({
-                where: {
-                    cotizacionId_tiendaId: {
-                        cotizacionId,
-                        tiendaId
-                    }
+        // Check if chat exists
+        let chat = await this.prisma.chat.findUnique({
+            where: {
+                cotizacionId_tiendaId: {
+                    cotizacionId,
+                    tiendaId
                 }
+            }
+        });
+
+        if (!chat) {
+            // Get Taller ID from Cotizacion
+            const cotizacion = await this.prisma.cotizacion.findUnique({
+                where: { id: cotizacionId },
+                select: { tallerId: true }
             });
 
-            if (!chat) {
-                console.log('Chat not found, creating new one');
-                // Get Taller ID from Cotizacion
-                const cotizacion = await this.prisma.cotizacion.findUnique({
-                    where: { id: cotizacionId },
-                    select: { tallerId: true }
-                });
-
-                if (!cotizacion) {
-                    console.error(`Quotation ${cotizacionId} not found`);
-                    throw new Error('Quotation not found');
-                }
-
-                chat = await this.prisma.chat.create({
-                    data: {
-                        cotizacionId,
-                        tiendaId,
-                        tallerId: cotizacion.tallerId
-                    }
-                });
-                console.log('Chat created:', chat.id);
-            } else {
-                console.log('Chat found:', chat.id);
+            if (!cotizacion) {
+                throw new BadRequestException('Quotation not found');
             }
 
-            return chat;
-        } catch (error) {
-            console.error('Service Error initializing chat:', error);
-            throw error;
+            chat = await this.prisma.chat.create({
+                data: {
+                    cotizacionId,
+                    tiendaId,
+                    tallerId: cotizacion.tallerId
+                }
+            });
+            this.logger.debug(`Chat created: ${chat.id}`);
         }
+
+        return chat;
     }
 
     async getMessages(chatId: string) {
@@ -91,11 +83,11 @@ export class ChatsService {
 
         // Security: ensure user is related to the chat
         if (user.role === Role.TIENDA) {
-            const tienda = await this.prisma.tienda.findUnique({ where: { userId: user.userId } }); // Use userId
+            const tienda = await this.prisma.tienda.findUnique({ where: { userId: user.userId } });
             if (!tienda) throw new BadRequestException('Store not found');
             whereClause.tiendaId = tienda.id;
         } else if (user.role === Role.TALLER) {
-            const taller = await this.prisma.taller.findUnique({ where: { userId: user.userId } }); // Use userId
+            const taller = await this.prisma.taller.findUnique({ where: { userId: user.userId } });
             if (!taller) throw new BadRequestException('Workshop not found');
             whereClause.tallerId = taller.id;
         }

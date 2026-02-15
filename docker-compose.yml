@@ -2,23 +2,22 @@ version: '3.8'
 
 services:
   # ===========================================
-  # PostgreSQL Database
+  # PostgreSQL Database (Internal Only)
   # ===========================================
   postgres:
     image: postgres:15-alpine
     container_name: findpart_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-findpart}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-findpart_password}
-      POSTGRES_DB: ${POSTGRES_DB:-findpart_db}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
+    # No ports exposed — internal network only
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-findpart}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,19 +25,18 @@ services:
       - findpart_network
 
   # ===========================================
-  # Redis (Cache & Queues)
+  # Redis (Internal Only — Password Protected)
   # ===========================================
   redis:
     image: redis:7-alpine
     container_name: findpart_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"
+    # No ports exposed — internal network only
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,20 +44,19 @@ services:
       - findpart_network
 
   # ===========================================
-  # Meilisearch (Search Engine)
+  # Meilisearch (Internal Only)
   # ===========================================
   meilisearch:
     image: getmeili/meilisearch:v1.5
     container_name: findpart_meilisearch
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-masterKey123}
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY}
       MEILI_NO_ANALYTICS: true
-      MEILI_ENV: ${NODE_ENV:-development}
+      MEILI_ENV: ${NODE_ENV:-production}
     volumes:
       - meilisearch_data:/meili_data
-    ports:
-      - "7700:7700"
+    # No ports exposed — internal network only
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
       interval: 10s
@@ -69,7 +66,7 @@ services:
       - findpart_network
 
   # ===========================================
-  # MinIO (S3-compatible Storage)
+  # MinIO (Internal Only)
   # ===========================================
   minio:
     image: minio/minio:latest
@@ -77,13 +74,11 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minio_access_key}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minio_secret_key_change_in_production}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
       - minio_data:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    # No ports exposed — internal network only
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -93,15 +88,14 @@ services:
       - findpart_network
 
   # ===========================================
-  # MailHog (Email Testing)
+  # MailHog (Development Only)
   # ===========================================
   mailhog:
     image: mailhog/mailhog:latest
     container_name: findpart_mailhog
     restart: unless-stopped
-    ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
+    profiles:
+      - development
     networks:
       - findpart_network
 
@@ -111,15 +105,17 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     container_name: findpart_backend
     restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       MEILISEARCH_HOST: ${MEILISEARCH_HOST}
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -128,11 +124,9 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    ports:
-      - "${BACKEND_PORT:-4000}:4000"
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_PORT: ${BACKEND_PORT:-4000}
+    # No ports exposed — accessible via Traefik only
     depends_on:
       postgres:
         condition: service_healthy
@@ -146,8 +140,11 @@ services:
       - findpart_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.backend.rule=Host(`${API_DOMAIN:-api.localhost}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=4000"
+      - "traefik.http.routers.backend.middlewares=security-headers"
 
   # ===========================================
   # BullMQ Worker
@@ -159,13 +156,11 @@ services:
     container_name: findpart_worker
     restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       REDIS_URL: ${REDIS_URL}
+      DATABASE_URL: ${DATABASE_URL}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       redis:
         condition: service_healthy
@@ -178,48 +173,61 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     container_name: findpart_frontend
     restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME}
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    ports:
-      - "3000:3000"
+    # No ports exposed — accessible via Traefik only
     depends_on:
       - backend
     networks:
       - findpart_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.frontend.middlewares=security-headers"
 
   # ===========================================
-  # Traefik (Reverse Proxy)
+  # Traefik (Reverse Proxy + TLS)
   # ===========================================
   traefik:
     image: traefik:v2.10
     container_name: findpart_traefik
     restart: unless-stopped
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8080:8080"  # Traefik dashboard
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml
+      - letsencrypt_data:/letsencrypt
     networks:
       - findpart_network
+    labels:
+      - "traefik.enable=true"
+      # Dashboard behind auth
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN:-traefik.localhost}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_HTPASSWD}"
+      # Security headers middleware (shared by all services)
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.security-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.security-headers.headers.permissionsPolicy=camera=(), microphone=(), geolocation=()"
 
 # ===========================================
 # Networks
@@ -236,3 +244,4 @@ volumes:
   redis_data:
   meilisearch_data:
   minio_data:
+  letsencrypt_data:

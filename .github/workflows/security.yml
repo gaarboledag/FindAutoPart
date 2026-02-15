@@ -1,0 +1,92 @@
+name: "\U0001F512 Security Pipeline"
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ========================================
+  # 1. Secret Detection
+  # ========================================
+  secret-scanning:
+    name: "\U0001F511 Secret Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ========================================
+  # 2. Dependency Audit
+  # ========================================
+  dependency-audit:
+    name: "\U0001F4E6 Dependency Audit"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: npm ci
+
+      - name: npm audit
+        working-directory: ${{ matrix.project }}
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  # ========================================
+  # 3. Docker Image Scan
+  # ========================================
+  docker-scan:
+    name: "\U0001F433 Docker Image Scan"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - context: ./backend
+            dockerfile: Dockerfile.prod
+            image: findpart-backend
+          - context: ./frontend
+            dockerfile: Dockerfile.prod
+            image: findpart-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: |
+          docker build -t ${{ matrix.image }}:scan \
+            -f ${{ matrix.context }}/${{ matrix.dockerfile }} \
+            ${{ matrix.context }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ matrix.image }}:scan"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+        if: always()

@@ -1,10 +1,10 @@
 # Development Dockerfile for Backend
 
-FROM node:18-bullseye-slim
+FROM node:20-bullseye-slim
 
-# Install OpenSSL 1.1 and procps for Prisma and NestJS watch mode
+# Install OpenSSL and procps for Prisma and NestJS watch mode
 RUN apt-get update && \
-    apt-get install -y openssl libssl1.1 procps && \
+    apt-get install -y openssl procps && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

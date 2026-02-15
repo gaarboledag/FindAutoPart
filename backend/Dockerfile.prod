@@ -1,34 +1,42 @@
-FROM node:18-alpine AS builder
+# === STAGE 1: Build ===
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar TODAS las dependencias (incluidas dev para build)
 RUN npm ci && npm cache clean --force
 
-# Copiar código fuente
 COPY . .
-
-# Generar Prisma Client
 RUN npx prisma generate
-
-# Build de la aplicación
 RUN npm run build
 
-# Etapa de producción
-FROM node:18-alpine
+# === STAGE 2: Production (Hardened) ===
+FROM node:20-alpine
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nestjs && \
+    adduser --system --uid 1001 nestjs
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
-# Copiar node_modules y build
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY package*.json ./
+# Copy only production artifacts
+COPY --from=builder --chown=nestjs:nestjs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nestjs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nestjs /app/prisma ./prisma
+COPY --from=builder --chown=nestjs:nestjs /app/package*.json ./
+
+# Set restrictive permissions
+RUN chmod -R 550 /app
+
+# Run as non-root user
+USER nestjs
 
 EXPOSE 4000
 
-CMD ["npm", "run", "start:prod"]
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/main"]
