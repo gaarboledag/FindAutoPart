@@ -38,19 +38,19 @@ export class ChatsController {
     }
 
     @Get(':id/messages')
-    @Roles(Role.TALLER, Role.TIENDA)
+    @Roles(Role.TALLER, Role.TIENDA, Role.ADMIN)
     async getMessages(@Param('id') id: string) {
         return this.chatsService.getMessages(id);
     }
 
     @Post(':id/messages')
-    @Roles(Role.TALLER, Role.TIENDA)
+    @Roles(Role.TALLER, Role.TIENDA, Role.ADMIN)
     async sendMessage(@Param('id') id: string, @Body() body: { content: string, imageUrl?: string }, @Req() req) {
         return this.chatsService.sendMessage(id, req.user.userId, body.content, body.imageUrl);
     }
 
     @Get('cotizacion/:id')
-    @Roles(Role.TALLER, Role.TIENDA)
+    @Roles(Role.TALLER, Role.TIENDA, Role.ADMIN)
     async getChatsByCotizacion(@Param('id') id: string, @Req() req) {
         return this.chatsService.getChatsByCotizacion(id, req.user);
     }

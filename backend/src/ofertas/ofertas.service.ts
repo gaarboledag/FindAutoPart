@@ -3,9 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOfertaDto } from './dto/create-oferta.dto';
 import { CotizacionStatus } from '@prisma/client';
 
+import { EventsGateway } from '../events/events.gateway';
+
 @Injectable()
 export class OfertasService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private eventsGateway: EventsGateway,
+    ) { }
 
     async create(tiendaId: string, cotizacionId: string, dto: CreateOfertaDto) {
         // Verify quotation exists and is open
@@ -56,11 +61,11 @@ export class OfertasService {
         });
 
         // Use validezDias if provided, otherwise diasEntrega
-        const diasEntrega = dto.diasEntrega || dto.validezDias || 7;
+        const diasEntrega = dto.diasEntrega ?? dto.validezDias ?? 7;
         const comentarios = dto.comentarios || dto.observaciones || null;
 
         // Create offer with items
-        return this.prisma.oferta.create({
+        const oferta = await this.prisma.oferta.create({
             data: {
                 cotizacionId,
                 tiendaId,
@@ -81,10 +86,15 @@ export class OfertasService {
                 items: true,
             },
         });
+
+        // Emit to the Taller who owns the quotation
+        this.eventsGateway.emitToUser(cotizacion.tallerId, 'newOferta', oferta);
+
+        return oferta;
     }
 
-    async findByTienda(tiendaId: string) {
-        return this.prisma.oferta.findMany({
+    async findByTienda(tiendaId: string, currentUserId?: string) {
+        const ofertas = await this.prisma.oferta.findMany({
             where: { tiendaId },
             include: {
                 cotizacion: {
@@ -99,9 +109,72 @@ export class OfertasService {
                     },
                 },
                 items: true,
+                pedido: {
+                    select: {
+                        id: true
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' },
         });
+
+        if (currentUserId && ofertas.length > 0) {
+            // Find chats for these offers
+            // Chat is unique per (cotizacionId, tiendaId)
+            const chatKeys = ofertas.map(o => ({ cotizacionId: o.cotizacionId, tiendaId: o.tiendaId }));
+
+            const chats = await this.prisma.chat.findMany({
+                where: {
+                    OR: chatKeys
+                },
+                select: {
+                    id: true,
+                    cotizacionId: true,
+                    tiendaId: true
+                }
+            });
+
+            if (chats.length > 0) {
+                const chatIds = chats.map(c => c.id);
+
+                const unreadCounts = await this.prisma.chatMessage.groupBy({
+                    by: ['chatId'],
+                    where: {
+                        chatId: { in: chatIds },
+                        isRead: false,
+                        senderId: { not: currentUserId }
+                    },
+                    _count: {
+                        _all: true
+                    }
+                });
+
+                const unreadMap = new Map<string, number>(); // ofertaId -> count
+                // We need to map chat -> oferta. 
+                // Oferta is (cotizacionId, tiendaId). Chat is also (cotizacionId, tiendaId).
+
+                unreadCounts.forEach(count => {
+                    const chat = chats.find(c => c.id === count.chatId);
+                    if (chat) {
+                        const oferta = ofertas.find(o => o.cotizacionId === chat.cotizacionId && o.tiendaId === chat.tiendaId);
+                        if (oferta) {
+                            unreadMap.set(oferta.id, count._count._all);
+                        }
+                    }
+                });
+
+                return ofertas.map(o => ({
+                    ...o,
+                    seleccionada: !!o.pedido,
+                    unreadCount: unreadMap.get(o.id) || 0
+                }));
+            }
+        }
+
+        return ofertas.map(o => ({
+            ...o,
+            seleccionada: !!o.pedido
+        }));
     }
 
     async findByCotizacion(cotizacionId: string) {

@@ -70,10 +70,10 @@ export class CotizacionesController {
                     where: { userId: user.userId },
                     select: { id: true },
                 })
-                .then((taller) => this.cotizacionesService.findAll(taller?.id, status));
+                .then((taller) => this.cotizacionesService.findAll(taller?.id, status, user.userId));
         }
 
-        return this.cotizacionesService.findAll(undefined, status);
+        return this.cotizacionesService.findAll(undefined, status, user.userId);
     }
 
     @Get('available')
@@ -187,6 +187,22 @@ export class CotizacionesController {
         }
 
         return this.cotizacionesService.close(id, taller.id);
+    }
+
+    @Post(':id/cancel')
+    @Roles(Role.TALLER)
+    @ApiOperation({ summary: 'Cancel quotation' })
+    async cancel(@Param('id') id: string, @CurrentUser() user: any) {
+        const taller = await this.cotizacionesService['prisma'].taller.findUnique({
+            where: { userId: user.userId },
+            select: { id: true },
+        });
+
+        if (!taller) {
+            throw new NotFoundException('Workshop profile not found');
+        }
+
+        return this.cotizacionesService.cancel(id, taller.id);
     }
 
     @Delete(':id')

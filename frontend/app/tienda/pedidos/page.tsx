@@ -2,27 +2,36 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { pedidosAPI } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Package, Clock, CheckCircle, XCircle, Truck } from 'lucide-react'
+import { Package, Clock, CheckCircle, XCircle, Truck, MessageCircle, TrendingUp } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useAuthStore } from '@/store/authStore'
+import { ChatWindow } from '@/components/chat/ChatWindow'
+import { toast } from 'sonner'
+import { useSocket } from '@/contexts/SocketContext' // Assuming sonner is used for toasts based on Taller page
 
 type Pedido = {
     id: string
+    cotizacionId: string
+    tiendaId: string
     status: 'PENDIENTE' | 'CONFIRMADO' | 'ENTREGADO' | 'CANCELADO'
     total: number
     direccionEntrega: string
     fechaEstimada?: string
     createdAt: string
     cotizacion: {
+        id: string
         titulo: string
         marca: string
         modelo: string
     }
     taller: {
+        id: string
         nombre: string
         telefono: string
         email: string
@@ -32,9 +41,45 @@ type Pedido = {
 
 export default function PedidosTiendaPage() {
     const router = useRouter()
+    const { user } = useAuthStore()
     const [pedidos, setPedidos] = useState<Pedido[]>([])
     const [loading, setLoading] = useState(true)
     const [updating, setUpdating] = useState<string | null>(null)
+
+    // Chat state
+    const [isChatOpen, setIsChatOpen] = useState(false)
+    const [selectedChat, setSelectedChat] = useState<{
+        cotizacionId: string
+        tiendaId: string
+        title: string
+    } | null>(null)
+
+    const { socket } = useSocket()
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewPedido = (newPedido: any) => {
+            setPedidos(prev => {
+                if (prev.find(p => p.id === newPedido.id)) return prev;
+                return [newPedido, ...prev];
+            });
+        }
+
+        const handlePedidoUpdate = (updatedPedido: any) => {
+            setPedidos(prev =>
+                prev.map(p => p.id === updatedPedido.id ? { ...p, status: updatedPedido.status } : p)
+            );
+        }
+
+        socket.on('newPedido', handleNewPedido);
+        socket.on('pedidoUpdate', handlePedidoUpdate);
+
+        return () => {
+            socket.off('newPedido', handleNewPedido);
+            socket.off('pedidoUpdate', handlePedidoUpdate);
+        }
+    }, [socket]);
 
     useEffect(() => {
         loadPedidos()
@@ -46,9 +91,21 @@ export default function PedidosTiendaPage() {
             setPedidos(data)
         } catch (error) {
             console.error('Error loading orders:', error)
+            toast.error('Error al cargar pedidos')
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleChatClick = (pedido: Pedido, e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setSelectedChat({
+            cotizacionId: pedido.cotizacionId || pedido.cotizacion.id,
+            tiendaId: pedido.tiendaId, // I am the tienda, but initChat expects the Tienda ID to identify the chat context
+            title: `Chat con ${pedido.taller.nombre} - ${pedido.cotizacion.titulo}`
+        })
+        setIsChatOpen(true)
     }
 
     const handleUpdateStatus = async (pedidoId: string, newStatus: string) => {
@@ -58,9 +115,10 @@ export default function PedidosTiendaPage() {
             setUpdating(pedidoId)
             await pedidosAPI.updateStatus(pedidoId, newStatus)
             await loadPedidos() // Reload to get fresh data
+            toast.success(`Estado actualizado a ${newStatus}`)
         } catch (error: any) {
             console.error('Error updating order status:', error)
-            alert(error.response?.data?.message || 'Error al actualizar estado')
+            toast.error(error.response?.data?.message || 'Error al actualizar estado')
         } finally {
             setUpdating(null)
         }
@@ -68,34 +126,28 @@ export default function PedidosTiendaPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'PENDIENTE': return 'warning'
-            case 'CONFIRMADO': return 'info'
-            case 'ENTREGADO': return 'success'
+            case 'CONFIRMADO': return 'success'
+            case 'ENTREGADO': return 'default'
             case 'CANCELADO': return 'destructive'
-            default: return 'default'
+            default: return 'warning'
         }
     }
 
     const getStatusIcon = (status: string) => {
         switch (status) {
-            case 'PENDIENTE': return <Clock className="h-3 w-3" />
             case 'CONFIRMADO': return <CheckCircle className="h-3 w-3" />
             case 'ENTREGADO': return <Package className="h-3 w-3" />
             case 'CANCELADO': return <XCircle className="h-3 w-3" />
+            default: return <Clock className="h-3 w-3" />
         }
     }
 
-    const getAvailableActions = (currentStatus: string) => {
-        switch (currentStatus) {
-            case 'PENDIENTE':
-                return ['CONFIRMADO', 'CANCELADO']
-            case 'CONFIRMADO':
-                return ['ENTREGADO', 'CANCELADO']
-            case 'ENTREGADO':
-            case 'CANCELADO':
-                return []
-            default:
-                return []
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'CONFIRMADO': return 'Confirmado'
+            case 'ENTREGADO': return 'Entregado'
+            case 'CANCELADO': return 'Cancelado'
+            default: return 'Pendiente'
         }
     }
 
@@ -109,11 +161,17 @@ export default function PedidosTiendaPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <div>
-                <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Mis Pedidos</h1>
-                <p className="text-muted-foreground mt-1">
-                    {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} recibido{pedidos.length !== 1 ? 's' : ''}
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">Pedidos Recibidos</h1>
+                    <p className="text-muted-foreground mt-1">Gestiona los envíos a tus clientes</p>
+                </div>
+                <Link href="/tienda/cotizaciones">
+                    <Button variant="outline" className="gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Ver Cotizaciones
+                    </Button>
+                </Link>
             </div>
 
             {pedidos.length === 0 ? (
@@ -122,148 +180,136 @@ export default function PedidosTiendaPage() {
                         <div className="text-center space-y-4">
                             <Package className="h-12 w-12 mx-auto text-muted-foreground" />
                             <div>
-                                <p className="text-lg font-medium">No tienes pedidos</p>
+                                <p className="text-lg font-medium">No hay pedidos pendientes</p>
                                 <p className="text-sm text-muted-foreground">
-                                    Cuando un taller seleccione una de tus ofertas, verás los pedidos aquí
+                                    Tus ofertas aceptadas aparecerán aquí.
                                 </p>
                             </div>
+                            <Link href="/tienda/cotizaciones">
+                                <Button className="mt-4">Buscar Cotizaciones</Button>
+                            </Link>
                         </div>
                     </CardContent>
                 </Card>
             ) : (
                 <div className="grid gap-4">
-                    {pedidos.map((pedido) => {
-                        const availableActions = getAvailableActions(pedido.status)
-                        const isUpdating = updating === pedido.id
-
-                        return (
-                            <Card key={pedido.id} className="hover:border-[#F97316]/50 transition-colors">
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div className="space-y-1 flex-1">
-                                            <CardTitle className="text-xl flex items-center gap-3">
+                    {pedidos.map((pedido) => (
+                        <Card key={pedido.id} className="overflow-hidden hover:border-primary/50 transition-colors">
+                            <CardHeader className="p-4 sm:p-6 bg-muted/20">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="space-y-1.5 min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <CardTitle className="text-sm sm:text-base md:text-lg leading-tight truncate">
                                                 {pedido.cotizacion.titulo}
-                                                <Badge variant={getStatusColor(pedido.status)} className="gap-1">
-                                                    {getStatusIcon(pedido.status)}
-                                                    {pedido.status}
-                                                </Badge>
                                             </CardTitle>
-                                            <p className="text-sm text-muted-foreground">
-                                                {pedido.cotizacion.marca} {pedido.cotizacion.modelo}
-                                            </p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-2xl font-bold text-[#22C55E]">
+                                        <p className="text-xs sm:text-sm text-muted-foreground">
+                                            {pedido.cotizacion.marca} {pedido.cotizacion.modelo}
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <Badge variant={getStatusColor(pedido.status)} className="gap-1 text-[10px] sm:text-xs">
+                                                {getStatusIcon(pedido.status)}
+                                                {getStatusLabel(pedido.status)}
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground">
+                                                {format(new Date(pedido.createdAt), "d 'de' MMM, HH:mm", { locale: es })}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Price and Action Buttons container */}
+                                    <div className="flex flex-col sm:items-end gap-1 sm:gap-2">
+                                        {/* Mobile: Absolute positioning for actions */}
+                                        <div className="absolute top-3 right-3 sm:static order-first flex gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-50"
+                                                onClick={(e) => handleChatClick(pedido, e)}
+                                                title="Ver Chat"
+                                            >
+                                                <MessageCircle className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+
+                                        {/* Price */}
+                                        <div className="text-left sm:text-right shrink-0 mt-6 sm:mt-0">
+                                            <p className="text-lg sm:text-xl md:text-2xl font-bold text-[#22C55E]">
                                                 ${pedido.total.toLocaleString('es-CO')}
                                             </p>
                                         </div>
                                     </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {/* Order Info */}
-                                    <div className="grid gap-4 md:grid-cols-3">
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-4 sm:p-6 grid gap-4 md:grid-cols-2">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Cliente / Taller</p>
+                                    <p className="font-medium">{pedido.taller.nombre}</p>
+                                    <p className="text-sm text-muted-foreground">{pedido.taller.telefono}</p>
+                                    <p className="text-sm text-muted-foreground">{pedido.taller.email}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Dirección de Entrega</p>
+                                    <div className="flex items-start gap-2">
+                                        <Truck className="h-4 w-4 text-muted-foreground mt-0.5" />
                                         <div>
-                                            <p className="text-xs text-muted-foreground mb-1">Taller</p>
-                                            <p className="font-medium text-sm">{pedido.taller.nombre}</p>
-                                            <p className="text-xs text-muted-foreground">{pedido.taller.telefono}</p>
-                                            <p className="text-xs text-muted-foreground">{pedido.taller.email}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground mb-1">Dirección de Entrega</p>
                                             <p className="text-sm">{pedido.direccionEntrega}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground mb-1">Fecha Pedido</p>
-                                            <p className="text-sm">
-                                                {format(new Date(pedido.createdAt), "d 'de' MMMM, yyyy", { locale: es })}
-                                            </p>
                                             {pedido.fechaEstimada && (
-                                                <>
-                                                    <p className="text-xs text-muted-foreground mt-2 mb-1">Entrega Estimada</p>
-                                                    <p className="text-sm flex items-center gap-1">
-                                                        <Truck className="h-3 w-3" />
-                                                        {format(new Date(pedido.fechaEstimada), "d 'de' MMM", { locale: es })}
-                                                    </p>
-                                                </>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Estimada: {format(new Date(pedido.fechaEstimada), "d 'de' MMM", { locale: es })}
+                                                </p>
                                             )}
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Actions */}
-                                    {availableActions.length > 0 && (
-                                        <div className="border-t pt-4">
-                                            <p className="text-sm font-medium mb-3">Actualizar Estado:</p>
-                                            <div className="flex gap-2">
-                                                {availableActions.map((action) => (
-                                                    <Button
-                                                        key={action}
-                                                        onClick={() => handleUpdateStatus(pedido.id, action)}
-                                                        disabled={isUpdating}
-                                                        variant={action === 'CANCELADO' ? 'destructive' : 'default'}
-                                                        size="sm"
-                                                        className="gap-2"
-                                                    >
-                                                        {getStatusIcon(action)}
-                                                        {action === 'CONFIRMADO' && 'Confirmar Pedido'}
-                                                        {action === 'ENTREGADO' && 'Marcar como Entregado'}
-                                                        {action === 'CANCELADO' && 'Cancelar'}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Status Timeline */}
-                                    <div className="border-t pt-4">
-                                        <div className="relative">
-                                            <div className="absolute inset-0 flex items-center">
-                                                <div className="w-full border-t-2 border-border"></div>
-                                            </div>
-                                            <div className="relative flex justify-between">
-                                                <div className={`flex flex-col items-center ${['PENDIENTE', 'CONFIRMADO', 'ENTREGADO'].includes(pedido.status)
-                                                        ? 'text-primary'
-                                                        : 'text-muted-foreground'
-                                                    }`}>
-                                                    <div className={`rounded-full p-2 ${['PENDIENTE', 'CONFIRMADO', 'ENTREGADO'].includes(pedido.status)
-                                                            ? 'bg-primary'
-                                                            : 'bg-muted'
-                                                        }`}>
-                                                        <Clock className="h-3 w-3 text-white" />
-                                                    </div>
-                                                    <p className="text-xs mt-1">Recibido</p>
-                                                </div>
-                                                <div className={`flex flex-col items-center ${['CONFIRMADO', 'ENTREGADO'].includes(pedido.status)
-                                                        ? 'text-primary'
-                                                        : 'text-muted-foreground'
-                                                    }`}>
-                                                    <div className={`rounded-full p-2 ${['CONFIRMADO', 'ENTREGADO'].includes(pedido.status)
-                                                            ? 'bg-primary'
-                                                            : 'bg-muted'
-                                                        }`}>
-                                                        <CheckCircle className="h-3 w-3 text-white" />
-                                                    </div>
-                                                    <p className="text-xs mt-1">Confirmado</p>
-                                                </div>
-                                                <div className={`flex flex-col items-center ${pedido.status === 'ENTREGADO'
-                                                        ? 'text-[#22C55E]'
-                                                        : 'text-muted-foreground'
-                                                    }`}>
-                                                    <div className={`rounded-full p-2 ${pedido.status === 'ENTREGADO'
-                                                            ? 'bg-green-600'
-                                                            : 'bg-muted'
-                                                        }`}>
-                                                        <Package className="h-3 w-3 text-white" />
-                                                    </div>
-                                                    <p className="text-xs mt-1">Entregado</p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                {/* Status Actions */}
+                                {pedido.status === 'PENDIENTE' && (
+                                    <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t mt-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleUpdateStatus(pedido.id, 'CANCELADO')}
+                                            disabled={!!updating}
+                                        >
+                                            Rechazar
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleUpdateStatus(pedido.id, 'CONFIRMADO')}
+                                            disabled={!!updating}
+                                        >
+                                            Confirmar Pedido
+                                        </Button>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
+                                )}
+                                {pedido.status === 'CONFIRMADO' && (
+                                    <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t mt-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleUpdateStatus(pedido.id, 'ENTREGADO')}
+                                            disabled={!!updating}
+                                        >
+                                            Marcar como Entregado
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
+            )}
+
+            {selectedChat && (
+                <ChatWindow
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    cotizacionId={selectedChat.cotizacionId}
+                    tiendaId={selectedChat.tiendaId}
+                    currentUserId={user?.id || ''}
+                    title={selectedChat.title}
+                />
             )}
         </div>
     )

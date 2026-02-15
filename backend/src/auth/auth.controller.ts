@@ -28,11 +28,9 @@ export class AuthController {
 
     @Post('refresh')
     @Throttle({ short: { limit: 1, ttl: 5000 } })
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
     @ApiOperation({ summary: 'Refresh access token' })
-    async refresh(@CurrentUser() user: any) {
-        return this.authService.refreshToken(user.userId);
+    async refresh(@Body() body: { refreshToken: string }) {
+        return this.authService.refreshToken(body.refreshToken);
     }
 
     @Get('me')

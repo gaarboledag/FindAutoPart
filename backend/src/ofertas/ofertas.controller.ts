@@ -56,7 +56,7 @@ export class OfertasController {
             throw new Error('Store profile not found');
         }
 
-        return this.ofertasService.findByTienda(tienda.id);
+        return this.ofertasService.findByTienda(tienda.id, user.userId);
     }
 
     @Get('cotizacion/:cotizacionId')

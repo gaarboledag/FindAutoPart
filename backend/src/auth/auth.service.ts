@@ -97,9 +97,19 @@ export class AuthService {
         return user;
     }
 
-    async refreshToken(userId: string) {
+    async refreshToken(refreshToken: string) {
+        // Verify and decode the refresh token
+        let payload: any;
+        try {
+            payload = await this.jwtService.verifyAsync(refreshToken, {
+                secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+            });
+        } catch {
+            throw new UnauthorizedException('Invalid or expired refresh token');
+        }
+
         const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: payload.sub },
             select: {
                 id: true,
                 email: true,

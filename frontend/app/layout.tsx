@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
+import { Toaster } from 'sonner'
+import { SocketProvider } from '@/contexts/SocketContext'
 
 const inter = Inter({
     subsets: ['latin'],
@@ -33,7 +35,10 @@ export default function RootLayout({
     return (
         <html lang="es" className={cn(inter.variable, jetbrainsMono.variable)}>
             <body className="font-sans antialiased bg-[#0F172A] text-[#F8FAFC] min-h-screen">
-                {children}
+                <SocketProvider>
+                    {children}
+                    <Toaster position="top-right" richColors theme="dark" />
+                </SocketProvider>
             </body>
         </html>
     )

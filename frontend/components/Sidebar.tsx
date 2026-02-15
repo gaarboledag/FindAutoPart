@@ -17,6 +17,7 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { cotizacionesAPI } from "@/lib/api"
 import { useAuthStore } from "@/store/authStore"
+import { useSocket } from "@/contexts/SocketContext"
 
 interface SidebarProps {
     role: "TALLER" | "TIENDA" | "ADMIN"
@@ -24,42 +25,29 @@ interface SidebarProps {
 
 export function SidebarContent({ role, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
     const pathname = usePathname()
-    const [unreadCount, setUnreadCount] = useState(0)
+    // const [unreadCount, setUnreadCount] = useState(0) // Removed local state
     const { user } = useAuthStore()
+    const { totalUnread } = useSocket() // Use global socket state
 
-    useEffect(() => {
-        if (role === 'TIENDA' && user) {
-            const fetchUnread = async () => {
-                try {
-                    const data = await cotizacionesAPI.getUnreadCount()
-                    setUnreadCount(data.count)
-                } catch (error) {
-                    console.error('Error fetching unread count:', error)
-                }
-            }
-
-            fetchUnread()
-            const interval = setInterval(fetchUnread, 30000)
-            return () => clearInterval(interval)
-        }
-    }, [role, user, pathname])
+    // Removed polling effect, handling in SocketContext
 
     const links = {
         TALLER: [
             { href: "/taller", label: "Dashboard", icon: LayoutDashboard },
-            { href: "/taller/cotizaciones", label: "Cotizaciones", icon: FileText },
+            { href: "/taller/cotizaciones", label: "Cotizaciones", icon: FileText, badge: role === 'TALLER' ? (totalUnread > 0 ? totalUnread : undefined) : undefined }, // Experimental for Taller
             { href: "/taller/pedidos", label: "Pedidos", icon: ShoppingBag },
             { href: "/taller/configuracion", label: "Configuración", icon: Settings },
         ],
         TIENDA: [
             { href: "/tienda", label: "Dashboard", icon: LayoutDashboard },
-            { href: "/tienda/cotizaciones", label: "Cotizaciones", icon: FileText, badge: unreadCount },
+            { href: "/tienda/cotizaciones", label: "Cotizaciones", icon: FileText, badge: totalUnread },
             { href: "/tienda/ofertas", label: "Mis Ofertas", icon: Package },
             { href: "/tienda/pedidos", label: "Pedidos", icon: ShoppingBag },
             { href: "/tienda/configuracion", label: "Configuración", icon: Settings },
         ],
         ADMIN: [
             { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+            { href: "/admin/cotizaciones", label: "Cotizaciones", icon: FileText },
             { href: "/admin/users", label: "Usuarios", icon: Users },
             { href: "/admin/activity", label: "Actividad", icon: Activity },
             { href: "/admin/config", label: "Configuración", icon: Settings },

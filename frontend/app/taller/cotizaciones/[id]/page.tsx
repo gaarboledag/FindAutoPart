@@ -12,6 +12,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { useAuthStore } from '@/store/authStore'
+import { useSocket } from '@/contexts/SocketContext'
 
 type Oferta = {
     id: string
@@ -74,6 +75,28 @@ export default function CotizacionDetailPage() {
             loadChatStatus()
         }
     }, [isChatOpen, id])
+
+    const { socket } = useSocket()
+
+    // Listen for new offers
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewOferta = (newOferta: any) => {
+            if (newOferta.cotizacionId === id) {
+                setOfertas(prev => {
+                    if (prev.find(o => o.id === newOferta.id)) return prev;
+                    return [newOferta, ...prev];
+                });
+            }
+        }
+
+        socket.on('newOferta', handleNewOferta);
+
+        return () => {
+            socket.off('newOferta', handleNewOferta);
+        }
+    }, [socket, id]);
 
     const loadData = async () => {
         try {
@@ -190,21 +213,23 @@ export default function CotizacionDetailPage() {
             )}
 
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Link href="/taller/cotizaciones">
-                    <Button variant="ghost" className="gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <Link href="/taller/cotizaciones" className="self-start sm:self-auto">
+                    <Button variant="ghost" className="gap-2 -ml-2 sm:ml-0">
                         <ArrowLeft className="h-4 w-4" />
                         Volver
                     </Button>
                 </Link>
-                <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold font-sans text-[#F8FAFC]">{cotizacion.titulo}</h1>
-                        <Badge variant={cotizacion.status === 'ABIERTA' ? 'default' : 'secondary'}>
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <h1 className="text-2xl sm:text-3xl font-bold font-sans text-[#F8FAFC] truncate leading-tight">
+                            {cotizacion.titulo}
+                        </h1>
+                        <Badge variant={cotizacion.status === 'ABIERTA' ? 'default' : 'secondary'} className="w-fit">
                             {cotizacion.status}
                         </Badge>
                     </div>
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-sm sm:text-base text-muted-foreground mt-1 truncate">
                         {cotizacion.marca} {cotizacion.modelo} ({cotizacion.anio})
                     </p>
                 </div>
@@ -346,16 +371,19 @@ export default function CotizacionDetailPage() {
                         {ofertas.map((oferta) => {
                             const isBest = bestOffer && oferta.id === bestOffer.id
                             const unreadMessages = unreadCounts[oferta.tienda.id] || 0;
+                            const totalItems = oferta.items.length;
+                            const itemsCubiertos = oferta.items.filter(i => i.disponible).length;
+                            const cobertura = totalItems > 0 ? Math.round((itemsCubiertos / totalItems) * 100) : 0;
 
                             return (
                                 <Card key={oferta.id} className={isBest ? 'border-green-500 border-2' : ''}>
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between">
-                                            <div className="space-y-1 flex-1">
-                                                <div className="flex items-center gap-3">
-                                                    <CardTitle className="text-xl">{oferta.tienda.nombre}</CardTitle>
+                                    <CardHeader className="p-4 sm:p-6">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                            <div className="space-y-1.5 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                                    <CardTitle className="text-lg sm:text-xl truncate">{oferta.tienda.nombre}</CardTitle>
                                                     {isBest && (
-                                                        <Badge variant="success" className="gap-1">
+                                                        <Badge variant="success" className="gap-1 text-[10px] sm:text-xs">
                                                             <CheckCircle className="h-3 w-3" />
                                                             Mejor Oferta
                                                         </Badge>
@@ -363,15 +391,15 @@ export default function CotizacionDetailPage() {
                                                 </div>
                                                 <p className="text-sm text-muted-foreground">{oferta.tienda.ciudad}</p>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 self-start sm:self-auto">
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => openChat(oferta.tienda.id, oferta.tienda.nombre)}
                                                     title="Chatear con la tienda"
-                                                    className="relative gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400"
+                                                    className="relative gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-400 text-xs sm:text-sm"
                                                 >
-                                                    <MessageSquare className="h-4 w-4 text-blue-400" />
+                                                    <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" />
                                                     Chatear
                                                     {unreadMessages > 0 && (
                                                         <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -385,34 +413,39 @@ export default function CotizacionDetailPage() {
                                                         onClick={() => handleSelectOffer(oferta.id, oferta.tienda)}
                                                         disabled={creatingPedido}
                                                         variant={isBest ? 'glow' : 'default'}
-                                                        className="gap-2"
+                                                        size="sm"
+                                                        className="gap-2 text-xs sm:text-sm"
                                                     >
-                                                        <Package className="h-4 w-4" />
+                                                        <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                                         Seleccionar
                                                     </Button>
                                                 )}
                                             </div>
                                         </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="grid gap-4 md:grid-cols-4 mb-4">
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Total</p>
-                                                <p className="text-2xl font-bold text-[#22C55E]">
+                                    <CardContent className="p-4 sm:p-6 pt-0">
+                                        <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-4">
+                                            <div className="bg-muted/30 p-2 rounded">
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Total</p>
+                                                <p className="text-lg sm:text-2xl font-bold text-[#22C55E]">
                                                     ${calculateTotal(oferta).toLocaleString('es-CO')}
                                                 </p>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Días Entrega</p>
-                                                <p className="text-2xl font-bold">{oferta.diasEntrega}</p>
+                                            <div className="bg-muted/30 p-2 rounded">
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Tiempo de Entrega</p>
+                                                <p className="text-base sm:text-xl font-bold">
+                                                    {(oferta.diasEntrega === 0 || oferta.diasEntrega === null) ? 'Inmediata' : `${oferta.diasEntrega} días`}
+                                                </p>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Items Cubiertos</p>
-                                                <p className="text-2xl font-bold">{oferta.itemsCubiertos}</p>
+                                            <div className="bg-muted/30 p-2 rounded">
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Disponibilidad</p>
+                                                <p className="text-base sm:text-xl font-bold">
+                                                    {itemsCubiertos}/{totalItems}
+                                                </p>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">Cobertura</p>
-                                                <p className="text-2xl font-bold">{oferta.cobertura}%</p>
+                                            <div className="bg-muted/30 p-2 rounded">
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Cobertura</p>
+                                                <p className="text-base sm:text-xl font-bold">{cobertura}%</p>
                                             </div>
                                         </div>
 
@@ -420,17 +453,21 @@ export default function CotizacionDetailPage() {
                                         <div className="space-y-2">
                                             <p className="text-sm font-medium">Detalle de Precios:</p>
                                             {oferta.items.map((item: any, idx: number) => (
-                                                <div key={idx} className="flex justify-between items-center text-sm p-2 bg-[#0F172A]/50 rounded">
+                                                <div key={idx} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm p-2 bg-[#0F172A]/50 rounded gap-1">
                                                     <div className="flex items-center gap-2">
                                                         <span>{item.nombre}</span>
                                                         {!item.disponible && (
-                                                            <Badge variant="warning" className="text-xs">
+                                                            <Badge variant="warning" className="text-[10px] h-5 px-1.5">
                                                                 No disponible
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <span className="font-medium">
-                                                        ${item.precioUnitario.toLocaleString('es-CO')} x {item.cantidad}
+                                                    <span className="font-medium text-xs sm:text-sm text-right">
+                                                        {item.disponible ? (
+                                                            <span>${item.precioUnitario.toLocaleString('es-CO')} <span className="text-muted-foreground">x {item.cantidad}</span></span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">-</span>
+                                                        )}
                                                     </span>
                                                 </div>
                                             ))}

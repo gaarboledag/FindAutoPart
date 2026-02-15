@@ -56,23 +56,14 @@ export class PedidosController {
     }
 
     @Patch(':id/status')
-    @Roles(Role.TIENDA)
-    @ApiOperation({ summary: 'Update order status (store only)' })
+    @Roles(Role.TIENDA, Role.TALLER)
+    @ApiOperation({ summary: 'Update order status' })
     async updateStatus(
         @Param('id') id: string,
         @CurrentUser() user: any,
         @Body() dto: UpdatePedidoStatusDto,
     ) {
-        const tienda = await this.pedidosService['prisma'].tienda.findUnique({
-            where: { userId: user.userId },
-            select: { id: true },
-        });
-
-        if (!tienda) {
-            throw new Error('Store profile not found');
-        }
-
-        return this.pedidosService.updateStatus(id, tienda.id, dto);
+        return this.pedidosService.updateStatus(id, user.userId, user.role, dto);
     }
 
     @Post(':id/cancel')

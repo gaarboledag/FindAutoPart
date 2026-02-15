@@ -45,17 +45,40 @@ api.interceptors.response.use(
                     refreshToken,
                 });
 
-                const { accessToken } = response.data;
+                const { accessToken, refreshToken: newRefreshToken } = response.data;
                 localStorage.setItem('access_token', accessToken);
+
+                // Update refresh token if the backend returns a new one
+                if (newRefreshToken) {
+                    localStorage.setItem('refresh_token', newRefreshToken);
+                }
+
+                // Sync tokens back to Zustand store
+                try {
+                    const { useAuthStore } = require('@/store/authStore');
+                    useAuthStore.setState({
+                        accessToken,
+                        ...(newRefreshToken ? { refreshToken: newRefreshToken } : {}),
+                    });
+                } catch {
+                    // Store may not be available during SSR, ignore
+                }
 
                 // Retry original request
                 originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
                 // Refresh failed, logout user
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                localStorage.removeItem('user');
+                try {
+                    const { useAuthStore } = require('@/store/authStore');
+                    useAuthStore.getState().logout();
+                } catch (e) {
+                    // Fallback
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('user');
+                }
+
                 window.location.href = '/auth/login';
                 return Promise.reject(refreshError);
             }
@@ -211,6 +234,11 @@ export const cotizacionesAPI = {
 
     close: async (id: string) => {
         const response = await api.post(`/cotizaciones/${id}/close`);
+        return response.data;
+    },
+
+    cancel: async (id: string) => {
+        const response = await api.post(`/cotizaciones/${id}/cancel`);
         return response.data;
     },
 

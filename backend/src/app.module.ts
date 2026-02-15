@@ -13,6 +13,7 @@ import { PedidosModule } from './pedidos/pedidos.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthModule } from './health/health.module';
 import { ChatsModule } from './chats/chats.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
     imports: [
@@ -27,17 +28,17 @@ import { ChatsModule } from './chats/chats.module';
             {
                 name: 'short',
                 ttl: 1000,    // 1 second
-                limit: 3,     // 3 req/sec
+                limit: 20,    // 20 req/sec
             },
             {
                 name: 'medium',
                 ttl: 10000,   // 10 seconds
-                limit: 20,    // 20 req/10sec
+                limit: 60,    // 60 req/10sec
             },
             {
                 name: 'long',
                 ttl: 60000,   // 1 minute
-                limit: 100,   // 100 req/min
+                limit: 150,   // 150 req/min
             },
         ]),
 
@@ -55,6 +56,7 @@ import { ChatsModule } from './chats/chats.module';
         AdminModule,
         HealthModule,
         ChatsModule,
+        EventsModule,
     ],
     controllers: [],
     providers: [

@@ -5,13 +5,16 @@ import { CreateCotizacionDto } from './dto/create-cotizacion.dto';
 import { UpdateCotizacionDto } from './dto/update-cotizacion.dto';
 import { CotizacionStatus } from '@prisma/client';
 
+import { EventsGateway } from '../events/events.gateway';
+
 @Injectable()
 export class CotizacionesService {
     private readonly logger = new Logger(CotizacionesService.name);
 
     constructor(
         private prisma: PrismaService,
-        private storageService: StorageService
+        private storageService: StorageService,
+        private eventsGateway: EventsGateway,
     ) { }
 
     private async enrichWithImages(cotizacion: any) {
@@ -60,7 +63,7 @@ export class CotizacionesService {
     }
 
     async create(tallerId: string, dto: CreateCotizacionDto) {
-        return this.prisma.cotizacion.create({
+        const cotizacion = await this.prisma.cotizacion.create({
             data: {
                 tallerId,
                 titulo: dto.titulo,
@@ -93,9 +96,14 @@ export class CotizacionesService {
                 items: true,
             },
         });
+
+        // Emit event to all Tiendas
+        this.eventsGateway.emitToRole('TIENDA', 'newCotizacion', cotizacion);
+
+        return cotizacion;
     }
 
-    async findAll(tallerId?: string, status?: CotizacionStatus) {
+    async findAll(tallerId?: string, status?: CotizacionStatus, currentUserId?: string) {
         const where: any = {};
 
         if (tallerId) {
@@ -128,7 +136,58 @@ export class CotizacionesService {
         });
 
         // Enrich all results with fresh signed URLs
-        return Promise.all(cotizaciones.map(c => this.enrichWithImages(c)));
+        const enriched = await Promise.all(cotizaciones.map(c => this.enrichWithImages(c)));
+
+        if (currentUserId) {
+            // Calculate unread counts for each cotizacion
+            const cotizacionIds = cotizaciones.map(c => c.id);
+
+            // Find all chats for these cotizaciones
+            const chats = await this.prisma.chat.findMany({
+                where: {
+                    cotizacionId: { in: cotizacionIds }
+                },
+                select: {
+                    id: true,
+                    cotizacionId: true
+                }
+            });
+
+            if (chats.length > 0) {
+                const chatIds = chats.map(c => c.id);
+
+                // Count unread messages for these chats excluding current user
+                const unreadCounts = await this.prisma.chatMessage.groupBy({
+                    by: ['chatId'],
+                    where: {
+                        chatId: { in: chatIds },
+                        isRead: false,
+                        senderId: { not: currentUserId }
+                    },
+                    _count: {
+                        _all: true
+                    }
+                });
+
+                // Map counts back to cotizaciones
+                const unreadMap = new Map<string, number>(); // cotizacionId -> count
+
+                unreadCounts.forEach(count => {
+                    const chat = chats.find(c => c.id === count.chatId);
+                    if (chat && chat.cotizacionId) {
+                        const current = unreadMap.get(chat.cotizacionId) || 0;
+                        unreadMap.set(chat.cotizacionId, current + count._count._all);
+                    }
+                });
+
+                return enriched.map(c => ({
+                    ...c,
+                    unreadCount: unreadMap.get(c.id) || 0
+                }));
+            }
+        }
+
+        return enriched;
     }
 
     async findAvailableForTienda(tiendaId: string) {
@@ -289,6 +348,37 @@ export class CotizacionesService {
                         tienda: true,
                     },
                 },
+            },
+        });
+    }
+
+    async cancel(id: string, tallerId: string) {
+        const cotizacion = await this.prisma.cotizacion.findUnique({
+            where: { id },
+            include: {
+                pedido: true
+            }
+        });
+
+        if (!cotizacion) {
+            throw new NotFoundException('Quotation not found');
+        }
+
+        if (cotizacion.tallerId !== tallerId) {
+            throw new BadRequestException('Not authorized to cancel this quotation');
+        }
+
+        // Optional: Check if order exists? For now, we allow cancellation but maybe log it.
+        // If an order exists, canceling the quotation might be weird, but user requested it.
+
+        return this.prisma.cotizacion.update({
+            where: { id },
+            data: {
+                status: CotizacionStatus.CANCELADA,
+            },
+            include: {
+                taller: true,
+                items: true,
             },
         });
     }

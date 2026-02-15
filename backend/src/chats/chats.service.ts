@@ -91,6 +91,7 @@ export class ChatsService {
             if (!taller) throw new BadRequestException('Workshop not found');
             whereClause.tallerId = taller.id;
         }
+        // Admin can see everything (no extra filters)
 
         const chats = await this.prisma.chat.findMany({
             where: whereClause,

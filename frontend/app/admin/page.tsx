@@ -194,6 +194,25 @@ export default function AdminDashboard() {
                             Gestión Rápida
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {/* Cotizaciones Management */}
+                            <Link href="/admin/cotizaciones">
+                                <Card className="hover:border-blue-500/50 cursor-pointer h-full group transition-all duration-300">
+                                    <CardHeader>
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-md bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                                                <FileText className="h-5 w-5 text-blue-500" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-base">Cotizaciones</CardTitle>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Gestiona solicitudes y chats
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                </Card>
+                            </Link>
+
                             {/* Users Management */}
                             <Link href="/admin/users">
                                 <Card className="hover:border-[#F97316]/50 cursor-pointer h-full group transition-all duration-300">
@@ -244,25 +263,6 @@ export default function AdminDashboard() {
                                                 <CardTitle className="text-base">Analytics</CardTitle>
                                                 <p className="text-xs text-muted-foreground">
                                                     Métricas y estadísticas
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                </Card>
-                            </Link>
-
-                            {/* Configuration */}
-                            <Link href="/admin/config">
-                                <Card className="hover:border-green-500/50 cursor-pointer h-full group transition-all duration-300">
-                                    <CardHeader>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-md bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
-                                                <Settings className="h-5 w-5 text-green-400" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-base">Configuración</CardTitle>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Gestión completa
                                                 </p>
                                             </div>
                                         </div>

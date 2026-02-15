@@ -4,9 +4,14 @@ import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoStatusDto } from './dto/update-pedido-status.dto';
 import { PedidoStatus, CotizacionStatus } from '@prisma/client';
 
+import { EventsGateway } from '../events/events.gateway';
+
 @Injectable()
 export class PedidosService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private eventsGateway: EventsGateway,
+    ) { }
 
     async create(tallerId: string, dto: CreatePedidoDto) {
         // Verify oferta exists
@@ -84,6 +89,9 @@ export class PedidosService {
             },
         });
 
+        // Notify Tienda about new order
+        this.eventsGateway.emitToUser(oferta.tiendaId, 'newPedido', pedido);
+
         return pedido;
     }
 
@@ -138,6 +146,11 @@ export class PedidosService {
                         ciudad: true,
                     },
                 },
+                oferta: {
+                    include: {
+                        items: true,
+                    },
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -169,17 +182,39 @@ export class PedidosService {
         return pedido;
     }
 
-    async updateStatus(id: string, tiendaId: string, dto: UpdatePedidoStatusDto) {
+    async updateStatus(id: string, userId: string, role: string, dto: UpdatePedidoStatusDto) {
         const pedido = await this.prisma.pedido.findUnique({
             where: { id },
+            include: {
+                taller: true,
+                tienda: true,
+            }
         });
 
         if (!pedido) {
             throw new NotFoundException('Order not found');
         }
 
-        if (pedido.tiendaId !== tiendaId) {
-            throw new BadRequestException('Not authorized to update this order');
+        // Role-based validation
+        if (role === 'TIENDA') {
+            if (pedido.tienda.userId !== userId) {
+                throw new BadRequestException('Not authorized to update this order');
+            }
+            // Tienda can only set to CONFIRMADO (or other intermediate statuses if they existed)
+            // Tienda CANNOT set to ENTREGADO anymore
+            if (dto.status === PedidoStatus.ENTREGADO) {
+                throw new BadRequestException('Only the Workshop can mark the order as received/delivered');
+            }
+        } else if (role === 'TALLER') {
+            if (pedido.taller.userId !== userId) {
+                throw new BadRequestException('Not authorized to update this order');
+            }
+            // Taller can only set to ENTREGADO
+            if (dto.status !== PedidoStatus.ENTREGADO) {
+                throw new BadRequestException('Workshop can only mark the order as delivered');
+            }
+        } else if (role !== 'ADMIN') {
+            throw new BadRequestException('Not authorized');
         }
 
         const updateData: any = {
@@ -191,7 +226,7 @@ export class PedidosService {
             updateData.fechaEntregado = new Date();
         }
 
-        return this.prisma.pedido.update({
+        const updated = await this.prisma.pedido.update({
             where: { id },
             data: updateData,
             include: {
@@ -200,6 +235,11 @@ export class PedidosService {
                 tienda: true,
             },
         });
+
+        // Notify Taller about status update
+        this.eventsGateway.emitToUser(pedido.tallerId, 'pedidoUpdate', updated);
+
+        return updated;
     }
 
     async cancel(id: string, userId: string, role: string) {
@@ -229,7 +269,7 @@ export class PedidosService {
             throw new BadRequestException('Cannot cancel a delivered order');
         }
 
-        return this.prisma.pedido.update({
+        const cancelled = await this.prisma.pedido.update({
             where: { id },
             data: {
                 status: PedidoStatus.CANCELADO,
@@ -240,5 +280,13 @@ export class PedidosService {
                 tienda: true,
             },
         });
+
+        // Notify both parties? Or just the other party.
+        // Simplification: Notify both or just target the other based on who initiated.
+        // For simplicity, emit to both parties involved
+        this.eventsGateway.emitToUser(pedido.tallerId, 'pedidoUpdate', cancelled);
+        this.eventsGateway.emitToUser(pedido.tiendaId, 'pedidoUpdate', cancelled);
+
+        return cancelled;
     }
 }
