@@ -174,8 +174,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
                     // Let's rely on component fetching for detailed counts and just use this for total badge.
                     // setUnreadCounts({ 'global_tienda': response.data.count });
                 }
-            } catch (error) {
-                console.error("Error fetching unread counts", error);
+            } catch (error: any) {
+                // Ignore 404 (Profile not found) as new users haven't completed setup
+                if (error.response?.status !== 404) {
+                    console.error("Error fetching unread counts", error);
+                }
             }
         };
 
