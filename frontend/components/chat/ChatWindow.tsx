@@ -70,7 +70,7 @@ export function ChatWindow({ isOpen, onClose, cotizacionId, tiendaId, currentUse
 
                 setChatId(currentChatId || null);
                 joinChat(currentChatId!);
-                setActiveChatId(currentChatId);
+                setActiveChatId(currentChatId || null);
 
                 // Load messages
                 const initialMessages = await chatsAPI.getMessages(currentChatId!);
