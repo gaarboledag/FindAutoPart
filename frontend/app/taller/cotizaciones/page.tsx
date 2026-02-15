@@ -27,6 +27,7 @@ type Cotizacion = {
     _count?: {
         ofertas: number
     }
+    unreadCount?: number
 }
 
 export default function CotizacionesPage() {
