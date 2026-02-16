@@ -102,7 +102,7 @@ export class CotizacionesController {
         });
 
         if (!tienda) {
-            throw new NotFoundException('Store profile not found');
+            return { count: 0 };
         }
 
         const count = await this.cotizacionesService.getUnreadCount(tienda.id);
